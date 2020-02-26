@@ -6,7 +6,7 @@ A chess board web component
 
 Usage
 
-```
+```javascript
 <loloof64-chessboard
     size="222"
     background="crimson"
