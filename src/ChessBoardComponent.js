@@ -3,10 +3,12 @@ class ChessBoardComponent extends HTMLElement {
         super();
         this.attachShadow({ mode: 'open'});
         this.size;
+        this.backgroundColor;
     }
 
     connectedCallback() {
        this.size = parseFloat(this.getAttribute('size') || '100.0');
+       this.backgroundColor = this.getAttribute('background') || '#124589';
        this.render();
     }
 
@@ -16,7 +18,7 @@ class ChessBoardComponent extends HTMLElement {
                 .root {
                     width: ${this.size}px;
                     height: ${this.size}px;
-                    background-color: #124589;
+                    background-color: ${this.backgroundColor};
                 }
             </style>
 

@@ -8,12 +8,14 @@ Usage
 
 ```
 <loloof64-chessboard
-        size="222"
-    ></loloof64-chessboard>
+    size="222"
+    background="crimson"
+></loloof64-chessboard>
 ```
 
 ### Properties
 
-| Name | Role                                              | Type   | Default |
-|------|---------------------------------------------------|--------|---------|
-| size | Common size (width/height) of the board in pixels | number | 100.0   |
+| Name       | Role                                              | Type   | Default |
+|------------|---------------------------------------------------|--------|---------|
+| size       | Common size (width/height) of the board in pixels | number | 100.0   |
+| background | Background color of the board outside zone        | string | #124589 |
