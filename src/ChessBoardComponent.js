@@ -82,6 +82,7 @@ class ChessBoardComponent extends HTMLElement {
             <div class="root">
                 ${this._buildTopCells()}
                 ${this._buildMediumCells()}
+                ${this._buildBottomCells()}
             </div>
         `;
     }
@@ -134,7 +135,20 @@ class ChessBoardComponent extends HTMLElement {
     }
 
     _buildBottomCells() {
+        const coordinates = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'];
+        const coordinatesCells = coordinates.map(letter => {
+            return `
+                <div class="coordinate">
+                    ${letter}
+                </div>
+            `
+        });
 
+        return [
+            "<div></div>",
+            ...coordinatesCells.join(''),
+            "<div></div>"
+        ].join('');
     }
 }
 
