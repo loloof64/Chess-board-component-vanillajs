@@ -2,11 +2,20 @@ class ChessBoardComponent extends HTMLElement {
     constructor(){
         super();
         this.attachShadow({ mode: 'open'});
+        this.size;
+    }
+
+    connectedCallback() {
+       this.size = parseFloat(this.getAttribute('size') || '100.0');
+       this.render();
+    }
+
+    render() {
         this.shadowRoot.innerHTML = `
             <style>
                 .root {
-                    width: 300px;
-                    height: 300px;
+                    width: ${this.size}px;
+                    height: ${this.size}px;
                     background-color: #124589;
                 }
             </style>
@@ -15,10 +24,6 @@ class ChessBoardComponent extends HTMLElement {
                 
             </div>
         `;
-    }
-
-    connectedCallback() {
-
     }
 }
 
