@@ -65,14 +65,13 @@ class ChessBoardComponent extends HTMLElement {
             <div class="root">
                 ${this._buildTopCells()}
                 ${this._buildMediumCells()}
-                ${this._buildBottomCells()}
             </div>
         `;
     }
 
     _buildTopCells() {
         const coordinates = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'];
-        const coordinatesCells = coordinates.map((letter, index) => {
+        const coordinatesCells = coordinates.map(letter => {
             return `
                 <div class="coordinate">
                     ${letter}
@@ -88,7 +87,33 @@ class ChessBoardComponent extends HTMLElement {
     }
 
     _buildMediumCells() {
+        const cells = [0,1,2,3,4,5,6,7].map(lineIndex => {
+            const asciiDigit1 = 49;
+            const letter = String.fromCharCode(asciiDigit1 + 7 - lineIndex);
 
+            const coordinateCell = `
+                <div class="coordinate">
+                    ${letter}
+                </div>
+            `;
+            const mediumCells = [0,1,2,3,4,5,6,7].map(colIndex => {
+                const isWhiteCell = (colIndex + lineIndex) % 2 === 0;
+                const background = isWhiteCell ? 'goldenrod' : 'brown';
+
+                return `
+                    <div style="background-color: ${background}">
+                    </div> 
+                `
+            });
+
+            return [
+                coordinateCell,
+                mediumCells.join(''),
+                coordinateCell,
+            ].join('');
+        }).join('');
+
+        return cells;
     }
 
     _buildBottomCells() {
