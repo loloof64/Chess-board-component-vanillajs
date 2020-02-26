@@ -1,6 +1,8 @@
 const defaultSizeAttr = '100.0';
 const defaultBackgroundAttr = '#124589';
 const defaultCoordinatesColorAttr = 'darkorange';
+const defaultWhiteCellsColorAttr = 'goldenrod';
+const defaultBlackCellsColorAttr = 'brown';
 
 class ChessBoardComponent extends HTMLElement {
     constructor(){
@@ -9,17 +11,24 @@ class ChessBoardComponent extends HTMLElement {
         this.size;
         this.backgroundColor;
         this.coordinatesColor;
+        this.whiteCellColor;
+        this.blackCellColor;
     }
 
     connectedCallback() {
        this.size = parseFloat(this.getAttribute('size') || defaultSizeAttr);
        this.backgroundColor = this.getAttribute('background') || defaultBackgroundAttr;
        this.coordinatesColor = this.getAttribute('coordinatesColor') || defaultCoordinatesColorAttr;
+       this.whiteCellColor = this.getAttribute('whiteCellColor') || defaultWhiteCellsColorAttr;
+       this.blackCellColor = this.getAttribute('blackCellColor') || defaultBlackCellsColorAttr;
        this._render();
     }
 
     static get observedAttributes() {
-        return ['size', 'background', 'coordinatesColor'];
+        return [
+            'size', 'background', 'coordinatesColor',
+            'whiteCellColor', 'blackCellColor',
+        ];
     }
 
     attributeChangedCallback(name, oldValue, newValue) {
@@ -34,6 +43,14 @@ class ChessBoardComponent extends HTMLElement {
         }
         else if (name === 'coordinatesColor') {
             this.coordinatesColor = newValue || defaultCoordinatesColorAttr;
+            this._render();
+        }
+        else if (name === 'whiteCellColor') {
+            this.whiteCellColor = newValue || defaultWhiteCellsColorAttr;
+            this._render();
+        }
+        else if (name === 'blackCellColor') {
+            this.blackCellColor = newValue || defaultBlackCellsColorAttr;
             this._render();
         }
     }
@@ -98,7 +115,7 @@ class ChessBoardComponent extends HTMLElement {
             `;
             const mediumCells = [0,1,2,3,4,5,6,7].map(colIndex => {
                 const isWhiteCell = (colIndex + lineIndex) % 2 === 0;
-                const background = isWhiteCell ? 'goldenrod' : 'brown';
+                const background = isWhiteCell ? this.whiteCellColor : this.blackCellColor;
 
                 return `
                     <div style="background-color: ${background}">
