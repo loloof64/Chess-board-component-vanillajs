@@ -126,9 +126,9 @@ class ChessBoardComponent extends HTMLElement {
                 const isWhiteCell = (colIndex + lineIndex) % 2 === 0;
                 const background = isWhiteCell ? this.whiteCellColor : this.blackCellColor;
 
-                const pieceImage = this._pieceValueToPieceImage(this._logic.get(this._cellToAlgebraic({
+                const pieceImage = this._logic ? this._pieceValueToPieceImage(this._logic.get(this._cellToAlgebraic({
                     file: colIndex, rank: 7-lineIndex
-                })));
+                }))) : undefined;
 
                 return pieceImage ? 
                 `
@@ -162,7 +162,7 @@ class ChessBoardComponent extends HTMLElement {
             `
         });
 
-        const playerTurnColor = this._logic.turn() === 'w' ? 'white' : 'black';
+        const playerTurnColor = this._logic ? (this._logic.turn() === 'w' ? 'white' : 'black') : '#00000000';
         const playerTurn = `
             <div class="player_turn" style="background-color: ${playerTurnColor}">
             </div>
