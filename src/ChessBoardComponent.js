@@ -1,3 +1,9 @@
+import * as Chess from '../lib/chess';
+import {
+    WhitePawn, WhiteKnight, WhiteBishop, WhiteRook, WhiteQueen, WhiteKing,
+    BlackPawn, BlackKnight, BlackBishop, BlackRook, BlackQueen, BlackKing,
+} from './PiecesImages';
+
 const defaultSizeAttr = '100.0';
 const defaultBackgroundAttr = '#124589';
 const defaultCoordinatesColorAttr = 'darkorange';

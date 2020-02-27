@@ -719,3 +719,8 @@ const BlackKing = (size) => {
     </svg>
     `;
 }
+
+export {
+    WhitePawn, WhiteKnight, WhiteBishop, WhiteRook, WhiteQueen, WhiteKing,
+    BlackPawn, BlackKnight, BlackBishop, BlackRook, BlackQueen, BlackKing,
+};

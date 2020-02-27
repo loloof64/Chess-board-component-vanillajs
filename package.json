@@ -1,0 +1,28 @@
+{
+  "name": "chess-board-component-vanillajs",
+  "version": "1.0.0",
+  "description": "A chess board Web Component",
+  "directories": {
+    "lib": "lib"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/loloof64/Chess-board-component-vanillajs.git"
+  },
+  "keywords": [
+    "chess",
+    "board",
+    "web-component"
+  ],
+  "private": true,
+  "author": "Laurent Bernabe",
+  "license": "MIT",
+  "homepage": "https://github.com/loloof64/Chess-board-component-vanillajs#readme",
+  "devDependencies": {
+    "webpack": "^4.41.6",
+    "webpack-cli": "^3.3.11"
+  }
+}
