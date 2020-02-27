@@ -81,6 +81,10 @@ class ChessBoardComponent extends HTMLElement {
                     font-size: ${cellsSize * 0.5}px;
                     color: ${this.coordinatesColor};
                 }
+
+                .player_turn {
+                    border-radius: 50%;
+                }
             </style>
 
             <div class="root">
@@ -158,10 +162,16 @@ class ChessBoardComponent extends HTMLElement {
             `
         });
 
+        const playerTurnColor = this._logic.turn() === 'w' ? 'white' : 'black';
+        const playerTurn = `
+            <div class="player_turn" style="background-color: ${playerTurnColor}">
+            </div>
+        `;
+
         return [
             "<div></div>",
             ...coordinatesCells.join(''),
-            "<div></div>"
+            playerTurn
         ].join('');
     }
 
