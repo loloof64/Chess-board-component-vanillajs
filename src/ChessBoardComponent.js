@@ -22,10 +22,10 @@ class ChessBoardComponent extends HTMLElement {
     connectedCallback() {
        this.size = parseFloat(this.getAttribute('size') || defaultSizeAttr);
        this.backgroundColor = this.getAttribute('background') || defaultBackgroundAttr;
-       this.coordinatesColor = this.getAttribute('coordinatesColor') || defaultCoordinatesColorAttr;
-       this.whiteCellColor = this.getAttribute('whiteCellColor') || defaultWhiteCellsColorAttr;
-       this.blackCellColor = this.getAttribute('blackCellColor') || defaultBlackCellsColorAttr;
-       this.startPosition = this.getAttribute('startPosition') || defaultStartPositionAttr;
+       this.coordinatesColor = this.getAttribute('coordinates_color') || defaultCoordinatesColorAttr;
+       this.whiteCellColor = this.getAttribute('white_cell_color') || defaultWhiteCellsColorAttr;
+       this.blackCellColor = this.getAttribute('black_cell_color') || defaultBlackCellsColorAttr;
+       this.startPosition = this.getAttribute('start_position') || defaultStartPositionAttr;
        this.reversed = (this.getAttribute('reversed') || defaultReversedAttr) === 'true';
        this._logic = new Chess(this.startPosition);
        this._render();
@@ -33,8 +33,8 @@ class ChessBoardComponent extends HTMLElement {
 
     static get observedAttributes() {
         return [
-            'size', 'background', 'coordinatesColor',
-            'whiteCellColor', 'blackCellColor', 'startPosition',
+            'size', 'background', 'coordinates_color',
+            'white_cell_color', 'black_cell_color', 'start_position',
             'reversed',
         ];
     }
@@ -49,16 +49,25 @@ class ChessBoardComponent extends HTMLElement {
             this.backgroundColor = newValue || defaultBackgroundAttr;
             this._render();
         }
-        else if (name === 'coordinatesColor') {
+        else if (name === 'coordinates_color') {
             this.coordinatesColor = newValue || defaultCoordinatesColorAttr;
             this._render();
         }
-        else if (name === 'whiteCellColor') {
+        else if (name === 'white_cell_color') {
             this.whiteCellColor = newValue || defaultWhiteCellsColorAttr;
             this._render();
         }
-        else if (name === 'blackCellColor') {
+        else if (name === 'black_cell_color') {
             this.blackCellColor = newValue || defaultBlackCellsColorAttr;
+            this._render();
+        }
+        else if (name === 'start_position') {
+            this.startPosition = newValue || defaultStartPositionAttr;
+            this._logic = new Chess(this.startPosition);
+            this._render();
+        }
+        else if (name === 'reversed') {
+            this.reversed = (newValue || defaultReversedAttr) === 'true';
             this._render();
         }
     }
