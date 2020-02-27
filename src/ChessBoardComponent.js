@@ -3,6 +3,7 @@ const defaultBackgroundAttr = '#124589';
 const defaultCoordinatesColorAttr = 'darkorange';
 const defaultWhiteCellsColorAttr = 'goldenrod';
 const defaultBlackCellsColorAttr = 'brown';
+const defaultStartPositionAttr = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
 
 class ChessBoardComponent extends HTMLElement {
     constructor(){
@@ -13,7 +14,7 @@ class ChessBoardComponent extends HTMLElement {
         this.coordinatesColor;
         this.whiteCellColor;
         this.blackCellColor;
-        this._logic = new Chess();
+        this._logic;
     }
 
     connectedCallback() {
@@ -22,6 +23,8 @@ class ChessBoardComponent extends HTMLElement {
        this.coordinatesColor = this.getAttribute('coordinatesColor') || defaultCoordinatesColorAttr;
        this.whiteCellColor = this.getAttribute('whiteCellColor') || defaultWhiteCellsColorAttr;
        this.blackCellColor = this.getAttribute('blackCellColor') || defaultBlackCellsColorAttr;
+       this.startPosition = this.getAttribute('startPosition') || defaultStartPositionAttr;
+       this._logic = new Chess(this.startPosition);
        this._render();
     }
 
