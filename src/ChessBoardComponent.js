@@ -13,6 +13,7 @@ class ChessBoardComponent extends HTMLElement {
         this.coordinatesColor;
         this.whiteCellColor;
         this.blackCellColor;
+        this._logic = new Chess();
     }
 
     connectedCallback() {
@@ -118,9 +119,19 @@ class ChessBoardComponent extends HTMLElement {
                 const isWhiteCell = (colIndex + lineIndex) % 2 === 0;
                 const background = isWhiteCell ? this.whiteCellColor : this.blackCellColor;
 
-                return `
+                const pieceImage = this._pieceValueToPieceImage(this._logic.get(this._cellToAlgebraic({
+                    file: colIndex, rank: 7-lineIndex
+                })));
+
+                return pieceImage ? 
+                `
                     <div style="background-color: ${background}">
+                        ${pieceImage}
                     </div> 
+                ` : 
+                `
+                <div style="background-color: ${background}">
+                </div> 
                 `
             });
 
@@ -149,6 +160,32 @@ class ChessBoardComponent extends HTMLElement {
             ...coordinatesCells.join(''),
             "<div></div>"
         ].join('');
+    }
+
+    _cellToAlgebraic({file, rank}) {
+        const asciiDigit1 = 49;
+        const asciiLowerA = 97;
+
+        const letter = String.fromCharCode(asciiLowerA + file);
+        const digit = String.fromCharCode(asciiDigit1 + rank);
+
+        return `${letter}${digit}`;
+    }
+
+    _pieceValueToPieceImage(value) {
+        if (!value) return undefined;
+        const {type, color} = value;
+
+        const cellsSize = this.size / 9.0;
+
+        switch(type) {
+            case 'p': return color === 'w' ? WhitePawn(cellsSize) : BlackPawn(cellsSize);
+            case 'n': return color === 'w' ? WhiteKnight(cellsSize) : BlackKnight(cellsSize);
+            case 'b': return color === 'w' ? WhiteBishop(cellsSize) : BlackBishop(cellsSize);
+            case 'r': return color === 'w' ? WhiteRook(cellsSize) : BlackRook(cellsSize);
+            case 'q': return color === 'w' ? WhiteQueen(cellsSize) : BlackQueen(cellsSize);
+            case 'k': return color === 'w' ? WhiteKing(cellsSize) : BlackKing(cellsSize);
+        }
     }
 }
 

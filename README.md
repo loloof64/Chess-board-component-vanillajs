@@ -25,3 +25,8 @@ Usage
 | coordinatesColor | Color of the coordinates around the board         | string | darkorange |
 | whiteCellColor   | Background color of the white cells of the board  | string | goldenrod  |
 | blackCellColor   | Background color of the black cells of the board  | string | brown      |
+
+## Credits
+
+Original pieces vectors definitions from CBurnett and found on [Wikimedia commons](https://commons.wikimedia.org/wiki/Category:SVG_chess_pieces).
+Using [ChessJS library](https://github.com/jhlywa/chess.js).
