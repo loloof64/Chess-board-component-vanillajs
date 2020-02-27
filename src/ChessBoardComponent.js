@@ -78,6 +78,11 @@ class ChessBoardComponent extends HTMLElement {
         }
     }
 
+    toggleSide() {
+        this.reversed = ! this.reversed;
+        this._render();
+    }
+
     _render() {
         const cellsSize = this.size / 9.0;
         const halfCellSize = cellsSize * 0.5;

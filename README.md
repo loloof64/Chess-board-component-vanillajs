@@ -30,6 +30,10 @@ Usage
 | start_position    | First loaded position in Forsyth-Edwards Notation | string  | rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1 |
 | reversed         | Whether black side is on top or not               | boolean | false                                                    |
 
+### Methods
+
+* toggleSide() : Toggle the reversed state of the board: that is "Is black side at top ?"
+
 ## Credits
 
 Original pieces vectors definitions from CBurnett and found on [Wikimedia commons](https://commons.wikimedia.org/wiki/Category:SVG_chess_pieces).

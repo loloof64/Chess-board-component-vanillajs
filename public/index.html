@@ -5,6 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <script src="../dist/ChessBoardComponent.min.js"></script>
     <title>Chess board web component test</title>
+
+    <script>
+        function toggleBoard() {
+            var board = document.querySelector('loloof64-chessboard');
+            board.toggleSide();
+        }
+    </script>
 </head>
 <body>
     <loloof64-chessboard
@@ -16,5 +23,7 @@
         start_position="4r3/8/2p2PPk/1p6/pP2p1R1/P1B5/2P2K2/3r4 b - - 1 45"
         reversed="true"
     ></loloof64-chessboard>
+    </hr>
+    <button onclick="toggleBoard();">Toggle</button>
 </body>
 </html>
