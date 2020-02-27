@@ -106,6 +106,12 @@ class ChessBoardComponent extends HTMLElement {
                     color: ${this.coordinatesColor};
                 }
 
+                .cell {
+                    display: flex;
+                    justify-content: center;
+                    align-items: center;
+                }
+
                 .player_turn {
                     border-radius: 50%;
                 }
@@ -159,12 +165,12 @@ class ChessBoardComponent extends HTMLElement {
 
                 return pieceImage ? 
                 `
-                    <div style="background-color: ${background}">
+                    <div class="cell" style="background-color: ${background}">
                         ${pieceImage}
                     </div> 
                 ` : 
                 `
-                <div style="background-color: ${background}">
+                <div class="cell" style="background-color: ${background}">
                 </div> 
                 `
             });
