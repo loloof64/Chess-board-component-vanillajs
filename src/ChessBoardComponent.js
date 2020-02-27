@@ -4,6 +4,7 @@ const defaultCoordinatesColorAttr = 'darkorange';
 const defaultWhiteCellsColorAttr = 'goldenrod';
 const defaultBlackCellsColorAttr = 'brown';
 const defaultStartPositionAttr = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
+const defaultReversedAttr = 'false';
 
 class ChessBoardComponent extends HTMLElement {
     constructor(){
@@ -14,6 +15,7 @@ class ChessBoardComponent extends HTMLElement {
         this.coordinatesColor;
         this.whiteCellColor;
         this.blackCellColor;
+        this.reversed;
         this._logic;
     }
 
@@ -24,6 +26,7 @@ class ChessBoardComponent extends HTMLElement {
        this.whiteCellColor = this.getAttribute('whiteCellColor') || defaultWhiteCellsColorAttr;
        this.blackCellColor = this.getAttribute('blackCellColor') || defaultBlackCellsColorAttr;
        this.startPosition = this.getAttribute('startPosition') || defaultStartPositionAttr;
+       this.reversed = (this.getAttribute('reversed') || defaultReversedAttr) === 'true';
        this._logic = new Chess(this.startPosition);
        this._render();
     }
@@ -31,7 +34,8 @@ class ChessBoardComponent extends HTMLElement {
     static get observedAttributes() {
         return [
             'size', 'background', 'coordinatesColor',
-            'whiteCellColor', 'blackCellColor',
+            'whiteCellColor', 'blackCellColor', 'startPosition',
+            'reversed',
         ];
     }
 
@@ -96,7 +100,9 @@ class ChessBoardComponent extends HTMLElement {
     }
 
     _buildTopCells() {
-        const coordinates = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'];
+        let coordinates = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'];
+        if (this.reversed) coordinates.reverse();
+
         const coordinatesCells = coordinates.map(letter => {
             return `
                 <div class="coordinate">
@@ -115,7 +121,7 @@ class ChessBoardComponent extends HTMLElement {
     _buildMediumCells() {
         const cells = [0,1,2,3,4,5,6,7].map(lineIndex => {
             const asciiDigit1 = 49;
-            const letter = String.fromCharCode(asciiDigit1 + 7 - lineIndex);
+            const letter = String.fromCharCode(asciiDigit1 + (this.reversed ? lineIndex : 7 - lineIndex) );
 
             const coordinateCell = `
                 <div class="coordinate">
@@ -127,7 +133,8 @@ class ChessBoardComponent extends HTMLElement {
                 const background = isWhiteCell ? this.whiteCellColor : this.blackCellColor;
 
                 const pieceImage = this._logic ? this._pieceValueToPieceImage(this._logic.get(this._cellToAlgebraic({
-                    file: colIndex, rank: 7-lineIndex
+                    file: this.reversed ? 7 - colIndex : colIndex, 
+                    rank: this.reversed ? lineIndex : 7-lineIndex,
                 }))) : undefined;
 
                 return pieceImage ? 
@@ -153,7 +160,9 @@ class ChessBoardComponent extends HTMLElement {
     }
 
     _buildBottomCells() {
-        const coordinates = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'];
+        let coordinates = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'];
+        if (this.reversed) coordinates.reverse();
+
         const coordinatesCells = coordinates.map(letter => {
             return `
                 <div class="coordinate">
