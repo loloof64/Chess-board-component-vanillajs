@@ -1,4 +1,4 @@
-import * as Chess from '../lib/chess';
+import Chess from 'chess.js';
 import {
     WhitePawn, WhiteKnight, WhiteBishop, WhiteRook, WhiteQueen, WhiteKing,
     BlackPawn, BlackKnight, BlackBishop, BlackRook, BlackQueen, BlackKing,
@@ -344,7 +344,7 @@ class ChessBoardComponent extends HTMLElement {
         event.preventDefault();
 
         if (this._dndStarted) {
-            
+
             const thisClientRect = this.shadowRoot.querySelector('#root').getBoundingClientRect();
             
             const localX = event.clientX - thisClientRect.left;
@@ -427,6 +427,13 @@ class ChessBoardComponent extends HTMLElement {
         const cellLineIndex = Math.floor((localY - this._cellsSize * 0.5) / this._cellsSize);
 
         return {cellColumnIndex, cellLineIndex};
+    }
+
+    _validateMove({
+        startCellColumnIndex, startCellLineIndex,
+        endCellColumnIndex, endCellLineIndex,
+    }) {
+        return true;
     }
 }
 
