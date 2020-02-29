@@ -34,6 +34,10 @@ Usage
 
 * toggleSide() : Toggle the reversed state of the board: that is "Is black side at top ?"
 
+## Developers
+
+You can build with the command (in the terminal) `$ npx webpack` from the root of the project. Result will be in the `dist` folder.
+
 ## Credits
 
 Original pieces vectors definitions from CBurnett and found on [Wikimedia commons](https://commons.wikimedia.org/wiki/Category:SVG_chess_pieces).

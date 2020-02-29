@@ -12,18 +12,37 @@
             board.toggleSide();
         }
     </script>
+
+    <style>
+        #board_zone {
+            margin-left: 10px;
+            margin-top: 50px;
+        }
+
+        #inner_zone {
+            margin-left: 60px;
+            margin-top: 30px;
+        }
+    </style>
 </head>
 <body>
-    <loloof64-chessboard
-        size="30"
-        background="crimson"
-        coordinates_color="yellow"
-        white_cell_color="navajowhite"
-        black_cell_color="peru"
-        start_position="4r3/8/2p2PPk/1p6/pP2p1R1/P1B5/2P2K2/3r4 b - - 1 45"
-        reversed="true"
-    ></loloof64-chessboard>
-    </hr>
-    <button onclick="toggleBoard();">Toggle</button>
+    <div id="board_zone">
+        <div id="inner_zone">
+            <loloof64-chessboard
+                size="300"
+                background="crimson"
+                coordinates_color="yellow"
+                white_cell_color="navajowhite"
+                black_cell_color="peru"
+                start_position="4r3/8/2p2PPk/1p6/pP2p1R1/P1B5/2P2K2/3r4 b - - 1 45"
+                reversed="true"
+            ></loloof64-chessboard>
+        </div>
+        </hr>
+        <button onclick="toggleBoard();">Toggle</button>
+    </div>
+
+    <hr />
+    <loloof64-chessboard></loloof64-chessboard>
 </body>
 </html>

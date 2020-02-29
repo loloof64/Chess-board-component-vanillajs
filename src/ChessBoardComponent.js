@@ -22,7 +22,12 @@ class ChessBoardComponent extends HTMLElement {
         this.whiteCellColor;
         this.blackCellColor;
         this.reversed;
+        
         this._logic;
+        this._rootElement;
+        this._dndStarted;
+        this._draggedPiece;
+        this._draggedPieceLocation;
     }
 
     connectedCallback() {
@@ -43,6 +48,12 @@ class ChessBoardComponent extends HTMLElement {
             'white_cell_color', 'black_cell_color', 'start_position',
             'reversed',
         ];
+    }
+
+    disconnectedCallback() {
+        this._rootElement.removeEventListener('mousedown', this._handleMouseDown.bind(this));
+        this._rootElement.removeEventListener('mousemove', this._handleMouseMove.bind(this));
+        this._rootElement.removeEventListener('mouseup', this._handleMouseUp.bind(this));
     }
 
     attributeChangedCallback(name, oldValue, newValue) {
@@ -90,12 +101,29 @@ class ChessBoardComponent extends HTMLElement {
 
         this.shadowRoot.innerHTML = `
             <style>
-                .root {
+                #root {
+                    position: relative;
+                    background-color: ${this.backgroundColor};
+                    width: ${this.size}px;
+                    height: ${this.size}px;
+                }
+
+                #cells_layer {
                     display: grid;
                     grid-template: ${commonGridTemplate} / ${commonGridTemplate};
                     width: ${this.size}px;
                     height: ${this.size}px;
-                    background-color: ${this.backgroundColor};
+                    left: 0;
+                    top: 0;
+                }
+
+                #dnd_layer {
+                    position: absolute;
+                    width: ${this.size}px;
+                    height: ${this.size}px;
+                    left: 0;
+                    top: 0;
+                    z-index: 5;
                 }
 
                 .coordinate {
@@ -117,12 +145,22 @@ class ChessBoardComponent extends HTMLElement {
                 }
             </style>
 
-            <div class="root">
-                ${this._buildTopCells()}
-                ${this._buildMediumCells()}
-                ${this._buildBottomCells()}
+            <div id="root">
+                <div id="cells_layer">
+                    ${this._buildTopCells()}
+                    ${this._buildMediumCells()}
+                    ${this._buildBottomCells()}
+                </div>
+                <div id="dnd_layer">
+                    ${this._buildDraggedPiece()}
+                </div>
             </div>
         `;
+
+        this._rootElement = this.shadowRoot.querySelector('#root');
+        this._rootElement.addEventListener('mousedown', this._handleMouseDown.bind(this));
+        this._rootElement.addEventListener('mousemove', this._handleMouseMove.bind(this));
+        this._rootElement.addEventListener('mouseup', this._handleMouseUp.bind(this));
     }
 
     _buildTopCells() {
@@ -210,6 +248,27 @@ class ChessBoardComponent extends HTMLElement {
         ].join('');
     }
 
+    _buildDraggedPiece() {
+        if (!this._draggedPiece || !this._draggedPieceLocation) 
+            return `
+                <div></div>
+            `;
+
+        const cellsSize = this.size / 9.0;
+
+        let styleStr = `left: ${this._draggedPieceLocation.localX}px; `;
+        styleStr += `top: ${this._draggedPieceLocation.localY}px; `;
+        styleStr += `width: ${cellsSize}px; `;
+        styleStr += `height: ${cellsSize}px; `;
+        styleStr += 'position: absolute; '
+
+        return `
+            <div style="${styleStr}" id="dragged_piece">
+                ${this._draggedPiece}
+            </div>
+        `
+    }
+
     _cellToAlgebraic({file, rank}) {
         const asciiDigit1 = 49;
         const asciiLowerA = 97;
@@ -234,6 +293,102 @@ class ChessBoardComponent extends HTMLElement {
             case 'q': return color === 'w' ? WhiteQueen(cellsSize) : BlackQueen(cellsSize);
             case 'k': return color === 'w' ? WhiteKing(cellsSize) : BlackKing(cellsSize);
         }
+    }
+
+    _handleMouseDown(event) {
+        event.preventDefault();
+        
+        const cellsSize = this.size / 9.0;
+        
+        
+        const thisClientRect = this.shadowRoot.querySelector('#root').getBoundingClientRect();
+        
+        const localX = event.clientX - thisClientRect.left;
+        const localY = event.clientY - thisClientRect.top;
+        
+        const cellColIndex = Math.floor((localX - cellsSize * 0.5) / cellsSize);
+        const cellLineIndex = Math.floor((localY - cellsSize * 0.5) / cellsSize);
+        
+        const inCellsBounds = cellColIndex >= 0 && cellColIndex <= 7 && cellLineIndex >= 0 && cellLineIndex <= 7;
+        if (!inCellsBounds) return;
+            
+        const pieceImageAtClickedSquare = this._logic ? this._pieceValueToPieceImage(this._logic.get(this._cellToAlgebraic({
+            file: this.reversed ? 7 - cellColIndex : cellColIndex, 
+            rank: this.reversed ? cellLineIndex : 7-cellLineIndex,
+        }))) : undefined;
+        if (!pieceImageAtClickedSquare) return;
+
+        this._draggedPiece = pieceImageAtClickedSquare;
+        this._draggedPieceLocation = {localX, localY};
+        this._dndStarted = true;
+
+        this._render();
+    }
+
+    _handleMouseMove(event) {
+        event.preventDefault();
+
+        if (this._dndStarted) {
+            const cellsSize = this.size / 9.0;
+
+
+            const thisClientRect = this.shadowRoot.querySelector('#root').getBoundingClientRect();
+            
+            const localX = event.clientX - thisClientRect.left;
+            const localY = event.clientY - thisClientRect.top;
+
+            this._draggedPieceLocation = {localX, localY};
+            this._updateDraggedPiece();
+            
+            const cellColIndex = Math.floor((localX - cellsSize * 0.5) / cellsSize);
+            const cellLineIndex = Math.floor((localY - cellsSize * 0.5) / cellsSize);
+            
+            const inCellsBounds = cellColIndex >= 0 && cellColIndex <= 7 && cellLineIndex >= 0 && cellLineIndex <= 7;
+            if (!inCellsBounds) return;
+            
+        }
+    }
+
+    _handleMouseUp(event) {
+        event.preventDefault();
+
+        this._draggedPiece = undefined;
+        this._draggedPieceLocation = undefined;
+        this._dndStarted = false;
+
+        this._render();
+
+        const cellsSize = this.size / 9.0;
+
+
+        const thisClientRect = this.shadowRoot.querySelector('#root').getBoundingClientRect();
+        
+        const localX = event.clientX - thisClientRect.left;
+        const localY = event.clientY - thisClientRect.top;
+
+        const cellColIndex = Math.floor((localX - cellsSize * 0.5) / cellsSize);
+        const cellLineIndex = Math.floor((localY - cellsSize * 0.5) / cellsSize);
+
+        const inCellsBounds = cellColIndex >= 0 && cellColIndex <= 7 && cellLineIndex >= 0 && cellLineIndex <= 7;
+        if (!inCellsBounds) return;
+    }
+
+    _updateDraggedPiece() {
+        const cellsSize = this.size / 9.0;
+        const commonUpperBound = this.size - cellsSize;
+        const draggedPieceElement = this.shadowRoot.querySelector('#dragged_piece');
+
+        const localX = this._draggedPieceLocation.localX;
+        let updatedX = this._draggedPieceLocation.localX + 'px';
+        if (localX < 0) updatedX = '0';
+        if (localX > commonUpperBound) updatedX = commonUpperBound + 'px';
+        draggedPieceElement.style.left = updatedX;
+
+        const localY = this._draggedPieceLocation.localY;
+        let updatedY = this._draggedPieceLocation.localY + 'px';
+        if (localY < 0) updatedY = '0';
+        if (localY > commonUpperBound) updatedY = commonUpperBound + 'px';
+        draggedPieceElement.style.top = updatedY;
     }
 }
 
