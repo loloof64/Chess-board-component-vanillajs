@@ -30,8 +30,6 @@ class ChessBoardComponent extends HTMLElement {
         this._draggedPiece;
         this._draggedPieceLocation;
         this._draggedPieceOriginCell;
-        this._originCellColIndex;
-        this._originCellLineIndex;
     }
 
     connectedCallback() {
@@ -203,23 +201,26 @@ class ChessBoardComponent extends HTMLElement {
                 const isWhiteCell = (colIndex + lineIndex) % 2 === 0;
                 const background = isWhiteCell ? this.whiteCellColor : this.blackCellColor;
 
-                let pieceImage = this._logic ? this._pieceValueToPieceImage(this._logic.get(this._cellToAlgebraic({
+                let pieceImage = this._logic ? this._pieceValueToPieceImage(this._logic.get(this._cellCoordinatesToAlgebraic({
                     file: this.reversed ? 7 - colIndex : colIndex, 
                     rank: this.reversed ? lineIndex : 7-lineIndex,
                 }))) : undefined;
 
+                let originCellColIndex;
+                let originCellLineIndex;
+
                 if (this._draggedPieceOriginCell) {
                     let {cellColumnIndex, cellLineIndex} = this._localCoordinatesToCellCoordinates(this._draggedPieceOriginCell);
-                    this._originCellColIndex = cellColumnIndex;
-                    this._originCellLineIndex = cellLineIndex;
+                    originCellColIndex = cellColumnIndex;
+                    originCellLineIndex = cellLineIndex;
                 }
                 else {
-                    this._originCellColIndex = undefined;
-                    this._originCellLineIndex = undefined;
+                    originCellColIndex = undefined;
+                    originCellLineIndex = undefined;
                 }
 
-                const isMovedPiece = colIndex === this._originCellColIndex &&
-                    lineIndex === this._originCellLineIndex;
+                const isMovedPiece = colIndex === originCellColIndex &&
+                    lineIndex === originCellLineIndex;
 
                 if (isMovedPiece) pieceImage = undefined;
 
@@ -289,7 +290,7 @@ class ChessBoardComponent extends HTMLElement {
         `
     }
 
-    _cellToAlgebraic({file, rank}) {
+    _cellCoordinatesToAlgebraic({file, rank}) {
         const asciiDigit1 = 49;
         const asciiLowerA = 97;
 
@@ -326,7 +327,7 @@ class ChessBoardComponent extends HTMLElement {
         const inCellsBounds = cellColumnIndex >= 0 && cellColumnIndex <= 7 && cellLineIndex >= 0 && cellLineIndex <= 7;
         if (!inCellsBounds) return;
             
-        const pieceImageAtClickedSquare = this._logic ? this._pieceValueToPieceImage(this._logic.get(this._cellToAlgebraic({
+        const pieceImageAtClickedSquare = this._logic ? this._pieceValueToPieceImage(this._logic.get(this._cellCoordinatesToAlgebraic({
             file: this.reversed ? 7 - cellColumnIndex : cellColumnIndex, 
             rank: this.reversed ? cellLineIndex : 7-cellLineIndex,
         }))) : undefined;
@@ -364,7 +365,8 @@ class ChessBoardComponent extends HTMLElement {
     _handleMouseUp(event) {
         event.preventDefault();
 
-        this._cancelDragAndDrop();
+        const dndAlreadyCancelled = ! this._draggedPiece;
+        if (dndAlreadyCancelled) return;
 
         const thisClientRect = this.shadowRoot.querySelector('#root').getBoundingClientRect();
         
@@ -374,7 +376,37 @@ class ChessBoardComponent extends HTMLElement {
         const {cellColumnIndex, cellLineIndex} = this._localCoordinatesToCellCoordinates({localX, localY});
 
         const inCellsBounds = cellColumnIndex >= 0 && cellColumnIndex <= 7 && cellLineIndex >= 0 && cellLineIndex <= 7;
-        if (!inCellsBounds) return;
+        if (!inCellsBounds) {
+            this._cancelDragAndDrop();
+            return;
+        };
+
+        const startCellCoordinates = this._localCoordinatesToCellCoordinates({
+            localX: this._draggedPieceOriginCell.localX,
+            localY: this._draggedPieceOriginCell.localY,
+        });
+        const startCellColumnIndex = startCellCoordinates.cellColumnIndex;
+        const startCellLineIndex = startCellCoordinates.cellLineIndex;
+
+        const startCellFile = this.reversed ? 7-startCellColumnIndex : startCellColumnIndex;
+        const startCellRank =  this.reversed ? startCellLineIndex : 7-startCellLineIndex;
+        const endCellFile = this.reversed ? 7-cellColumnIndex : cellColumnIndex;
+        const endCellRank = this.reversed ? cellLineIndex : 7-cellLineIndex;
+
+        const validMove = this._isValidMove({
+            startCellFile, startCellRank,
+            endCellFile, endCellRank,
+        });
+
+        if (validMove){
+            const moveParams = this._convertMoveToObject({
+                startCellFile, startCellRank,
+                endCellFile, endCellRank
+            });
+            this._logic.move(moveParams);
+            this._render();
+        }
+        this._cancelDragAndDrop();
     }
 
     _handleMouseLeave(event) {
@@ -429,11 +461,39 @@ class ChessBoardComponent extends HTMLElement {
         return {cellColumnIndex, cellLineIndex};
     }
 
-    _validateMove({
-        startCellColumnIndex, startCellLineIndex,
-        endCellColumnIndex, endCellLineIndex,
+    _isValidMove({
+        startCellFile, startCellRank,
+        endCellFile, endCellRank,
     }) {
-        return true;
+        const moveParams = this._convertMoveToObject({
+            startCellFile, startCellRank,
+            endCellFile, endCellRank
+        });
+        
+        const logicClone = new Chess(this._logic.fen());
+        return logicClone.move(moveParams) !== null;
+    }
+
+    _convertMoveToObject({
+        startCellFile, startCellRank,
+        endCellFile, endCellRank,
+        promotion = 'q',
+    }) {
+        const startCellAlgebraic = this._cellCoordinatesToAlgebraic({
+            file: startCellFile,
+            rank: startCellRank
+        });
+        const endCellAlgebraic = this._cellCoordinatesToAlgebraic({
+            file: endCellFile,
+            rank: endCellRank
+        });
+        const moveParams = {
+            from: startCellAlgebraic,
+            to: endCellAlgebraic,
+            promotion,
+        };
+
+        return moveParams;
     }
 }
 
