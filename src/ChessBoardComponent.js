@@ -23,15 +23,20 @@ class ChessBoardComponent extends HTMLElement {
         this.blackCellColor;
         this.reversed;
         
+        this._cellsSize;
         this._logic;
         this._rootElement;
         this._dndStarted;
         this._draggedPiece;
         this._draggedPieceLocation;
+        this._draggedPieceOriginCell;
+        this._originCellColIndex;
+        this._originCellLineIndex;
     }
 
     connectedCallback() {
        this.size = parseFloat(this.getAttribute('size') || defaultSizeAttr);
+       this._cellsSize = this.size / 9.0;
        this.backgroundColor = this.getAttribute('background') || defaultBackgroundAttr;
        this.coordinatesColor = this.getAttribute('coordinates_color') || defaultCoordinatesColorAttr;
        this.whiteCellColor = this.getAttribute('white_cell_color') || defaultWhiteCellsColorAttr;
@@ -61,6 +66,7 @@ class ChessBoardComponent extends HTMLElement {
         if (oldValue == newValue) return;
         if (name === 'size') {
             this.size = parseFloat(newValue || defaultSizeAttr);
+            this._cellsSize = this.size / 9.0;
             this._render();
         }
         else if (name === 'background') {
@@ -96,9 +102,8 @@ class ChessBoardComponent extends HTMLElement {
     }
 
     _render() {
-        const cellsSize = this.size / 9.0;
-        const halfCellSize = cellsSize * 0.5;
-        const commonGridTemplate = `${halfCellSize}px repeat(8, ${cellsSize}px) ${halfCellSize}px`;
+        const halfCellSize = this._cellsSize * 0.5;
+        const commonGridTemplate = `${halfCellSize}px repeat(8, ${this._cellsSize}px) ${halfCellSize}px`;
 
         this.shadowRoot.innerHTML = `
             <style>
@@ -131,7 +136,7 @@ class ChessBoardComponent extends HTMLElement {
                     display: flex;
                     justify-content: center;
                     align-items: center;
-                    font-size: ${cellsSize * 0.5}px;
+                    font-size: ${halfCellSize}px;
                     color: ${this.coordinatesColor};
                 }
 
@@ -198,10 +203,25 @@ class ChessBoardComponent extends HTMLElement {
                 const isWhiteCell = (colIndex + lineIndex) % 2 === 0;
                 const background = isWhiteCell ? this.whiteCellColor : this.blackCellColor;
 
-                const pieceImage = this._logic ? this._pieceValueToPieceImage(this._logic.get(this._cellToAlgebraic({
+                let pieceImage = this._logic ? this._pieceValueToPieceImage(this._logic.get(this._cellToAlgebraic({
                     file: this.reversed ? 7 - colIndex : colIndex, 
                     rank: this.reversed ? lineIndex : 7-lineIndex,
                 }))) : undefined;
+
+                if (this._draggedPieceOriginCell) {
+                    let {cellColumnIndex, cellLineIndex} = this._localCoordinatesToCellCoordinates(this._draggedPieceOriginCell);
+                    this._originCellColIndex = cellColumnIndex;
+                    this._originCellLineIndex = cellLineIndex;
+                }
+                else {
+                    this._originCellColIndex = undefined;
+                    this._originCellLineIndex = undefined;
+                }
+
+                const isMovedPiece = colIndex === this._originCellColIndex &&
+                    lineIndex === this._originCellLineIndex;
+
+                if (isMovedPiece) pieceImage = undefined;
 
                 return pieceImage ? 
                 `
@@ -256,12 +276,10 @@ class ChessBoardComponent extends HTMLElement {
                 <div></div>
             `;
 
-        const cellsSize = this.size / 9.0;
-
         let styleStr = `left: ${this._draggedPieceLocation.localX}px; `;
         styleStr += `top: ${this._draggedPieceLocation.localY}px; `;
-        styleStr += `width: ${cellsSize}px; `;
-        styleStr += `height: ${cellsSize}px; `;
+        styleStr += `width: ${this._cellsSize}px; `;
+        styleStr += `height: ${this._cellsSize}px; `;
         styleStr += 'position: absolute; '
 
         return `
@@ -285,42 +303,37 @@ class ChessBoardComponent extends HTMLElement {
         if (!value) return undefined;
         const {type, color} = value;
 
-        const cellsSize = this.size / 9.0;
-
         switch(type) {
-            case 'p': return color === 'w' ? WhitePawn(cellsSize) : BlackPawn(cellsSize);
-            case 'n': return color === 'w' ? WhiteKnight(cellsSize) : BlackKnight(cellsSize);
-            case 'b': return color === 'w' ? WhiteBishop(cellsSize) : BlackBishop(cellsSize);
-            case 'r': return color === 'w' ? WhiteRook(cellsSize) : BlackRook(cellsSize);
-            case 'q': return color === 'w' ? WhiteQueen(cellsSize) : BlackQueen(cellsSize);
-            case 'k': return color === 'w' ? WhiteKing(cellsSize) : BlackKing(cellsSize);
+            case 'p': return color === 'w' ? WhitePawn(this._cellsSize) : BlackPawn(this._cellsSize);
+            case 'n': return color === 'w' ? WhiteKnight(this._cellsSize) : BlackKnight(this._cellsSize);
+            case 'b': return color === 'w' ? WhiteBishop(this._cellsSize) : BlackBishop(this._cellsSize);
+            case 'r': return color === 'w' ? WhiteRook(this._cellsSize) : BlackRook(this._cellsSize);
+            case 'q': return color === 'w' ? WhiteQueen(this._cellsSize) : BlackQueen(this._cellsSize);
+            case 'k': return color === 'w' ? WhiteKing(this._cellsSize) : BlackKing(this._cellsSize);
         }
     }
 
     _handleMouseDown(event) {
-        event.preventDefault();
-        
-        const cellsSize = this.size / 9.0;
-        
+        event.preventDefault();     
         
         const thisClientRect = this.shadowRoot.querySelector('#root').getBoundingClientRect();
         
         const localX = event.clientX - thisClientRect.left;
         const localY = event.clientY - thisClientRect.top;
         
-        const cellColIndex = Math.floor((localX - cellsSize * 0.5) / cellsSize);
-        const cellLineIndex = Math.floor((localY - cellsSize * 0.5) / cellsSize);
+        const {cellColumnIndex, cellLineIndex} = this._localCoordinatesToCellCoordinates({localX, localY});
         
-        const inCellsBounds = cellColIndex >= 0 && cellColIndex <= 7 && cellLineIndex >= 0 && cellLineIndex <= 7;
+        const inCellsBounds = cellColumnIndex >= 0 && cellColumnIndex <= 7 && cellLineIndex >= 0 && cellLineIndex <= 7;
         if (!inCellsBounds) return;
             
         const pieceImageAtClickedSquare = this._logic ? this._pieceValueToPieceImage(this._logic.get(this._cellToAlgebraic({
-            file: this.reversed ? 7 - cellColIndex : cellColIndex, 
+            file: this.reversed ? 7 - cellColumnIndex : cellColumnIndex, 
             rank: this.reversed ? cellLineIndex : 7-cellLineIndex,
         }))) : undefined;
         if (!pieceImageAtClickedSquare) return;
 
         this._draggedPiece = pieceImageAtClickedSquare;
+        this._draggedPieceOriginCell = {localX, localY};
         this._draggedPieceLocation = {localX, localY};
         this._dndStarted = true;
 
@@ -331,9 +344,7 @@ class ChessBoardComponent extends HTMLElement {
         event.preventDefault();
 
         if (this._dndStarted) {
-            const cellsSize = this.size / 9.0;
-
-
+            
             const thisClientRect = this.shadowRoot.querySelector('#root').getBoundingClientRect();
             
             const localX = event.clientX - thisClientRect.left;
@@ -342,10 +353,9 @@ class ChessBoardComponent extends HTMLElement {
             this._draggedPieceLocation = {localX, localY};
             this._updateDraggedPiece();
             
-            const cellColIndex = Math.floor((localX - cellsSize * 0.5) / cellsSize);
-            const cellLineIndex = Math.floor((localY - cellsSize * 0.5) / cellsSize);
+            const {cellColumnIndex, cellLineIndex} = this._localCoordinatesToCellCoordinates({localX, localY});
             
-            const inCellsBounds = cellColIndex >= 0 && cellColIndex <= 7 && cellLineIndex >= 0 && cellLineIndex <= 7;
+            const inCellsBounds = cellColumnIndex >= 0 && cellColumnIndex <= 7 && cellLineIndex >= 0 && cellLineIndex <= 7;
             if (!inCellsBounds) return;
             
         }
@@ -353,21 +363,17 @@ class ChessBoardComponent extends HTMLElement {
 
     _handleMouseUp(event) {
         event.preventDefault();
-        
+
         this._cancelDragAndDrop();
-
-        const cellsSize = this.size / 9.0;
-
 
         const thisClientRect = this.shadowRoot.querySelector('#root').getBoundingClientRect();
         
         const localX = event.clientX - thisClientRect.left;
         const localY = event.clientY - thisClientRect.top;
 
-        const cellColIndex = Math.floor((localX - cellsSize * 0.5) / cellsSize);
-        const cellLineIndex = Math.floor((localY - cellsSize * 0.5) / cellsSize);
+        const {cellColumnIndex, cellLineIndex} = this._localCoordinatesToCellCoordinates({localX, localY});
 
-        const inCellsBounds = cellColIndex >= 0 && cellColIndex <= 7 && cellLineIndex >= 0 && cellLineIndex <= 7;
+        const inCellsBounds = cellColumnIndex >= 0 && cellColumnIndex <= 7 && cellLineIndex >= 0 && cellLineIndex <= 7;
         if (!inCellsBounds) return;
     }
 
@@ -377,8 +383,7 @@ class ChessBoardComponent extends HTMLElement {
     }
 
     _updateDraggedPiece() {
-        const cellsSize = this.size / 9.0;
-        const commonUpperBound = this.size - cellsSize;
+        const commonUpperBound = this.size - this._cellsSize;
         const draggedPieceElement = this.shadowRoot.querySelector('#dragged_piece');
 
         const localX = this._draggedPieceLocation.localX;
@@ -409,8 +414,19 @@ class ChessBoardComponent extends HTMLElement {
     _cancelDragAndDrop() {
         this._draggedPiece = undefined;
         this._draggedPieceLocation = undefined;
+        this._draggedPieceOriginCell = undefined;
         this._dndStarted = false;
         this._render();
+    }
+
+    _localCoordinatesToCellCoordinates(localCoordinates) {
+        if (! localCoordinates) return undefined;
+
+        const {localX, localY} = localCoordinates;
+        const cellColumnIndex = Math.floor((localX - this._cellsSize * 0.5) / this._cellsSize);
+        const cellLineIndex = Math.floor((localY - this._cellsSize * 0.5) / this._cellsSize);
+
+        return {cellColumnIndex, cellLineIndex};
     }
 }
 
