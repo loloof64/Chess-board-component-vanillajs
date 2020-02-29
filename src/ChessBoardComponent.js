@@ -54,6 +54,7 @@ class ChessBoardComponent extends HTMLElement {
         this._rootElement.removeEventListener('mousedown', this._handleMouseDown.bind(this));
         this._rootElement.removeEventListener('mousemove', this._handleMouseMove.bind(this));
         this._rootElement.removeEventListener('mouseup', this._handleMouseUp.bind(this));
+        this._rootElement.removeEventListener('mouseleave', this._handleMouseLeave.bind(this));
     }
 
     attributeChangedCallback(name, oldValue, newValue) {
@@ -161,6 +162,7 @@ class ChessBoardComponent extends HTMLElement {
         this._rootElement.addEventListener('mousedown', this._handleMouseDown.bind(this));
         this._rootElement.addEventListener('mousemove', this._handleMouseMove.bind(this));
         this._rootElement.addEventListener('mouseup', this._handleMouseUp.bind(this));
+        this._rootElement.addEventListener('mouseleave', this._handleMouseLeave.bind(this));
     }
 
     _buildTopCells() {
@@ -351,12 +353,8 @@ class ChessBoardComponent extends HTMLElement {
 
     _handleMouseUp(event) {
         event.preventDefault();
-
-        this._draggedPiece = undefined;
-        this._draggedPieceLocation = undefined;
-        this._dndStarted = false;
-
-        this._render();
+        
+        this._cancelDragAndDrop();
 
         const cellsSize = this.size / 9.0;
 
@@ -373,6 +371,11 @@ class ChessBoardComponent extends HTMLElement {
         if (!inCellsBounds) return;
     }
 
+    _handleMouseLeave(event) {
+        event.preventDefault();
+        this._cancelDragAndDrop();
+    }
+
     _updateDraggedPiece() {
         const cellsSize = this.size / 9.0;
         const commonUpperBound = this.size - cellsSize;
@@ -380,15 +383,34 @@ class ChessBoardComponent extends HTMLElement {
 
         const localX = this._draggedPieceLocation.localX;
         let updatedX = this._draggedPieceLocation.localX + 'px';
-        if (localX < 0) updatedX = '0';
-        if (localX > commonUpperBound) updatedX = commonUpperBound + 'px';
+        if (localX < 0) { 
+            this._cancelDragAndDrop();
+            return; 
+        }
+        if (localX > commonUpperBound) { 
+            this._cancelDragAndDrop();
+            return; 
+        }
         draggedPieceElement.style.left = updatedX;
 
         const localY = this._draggedPieceLocation.localY;
         let updatedY = this._draggedPieceLocation.localY + 'px';
-        if (localY < 0) updatedY = '0';
-        if (localY > commonUpperBound) updatedY = commonUpperBound + 'px';
+        if (localY < 0) { 
+            this._cancelDragAndDrop();
+            return; 
+        }
+        if (localY > commonUpperBound) { 
+            this._cancelDragAndDrop();
+            return; 
+        }
         draggedPieceElement.style.top = updatedY;
+    }
+
+    _cancelDragAndDrop() {
+        this._draggedPiece = undefined;
+        this._draggedPieceLocation = undefined;
+        this._dndStarted = false;
+        this._render();
     }
 }
 
