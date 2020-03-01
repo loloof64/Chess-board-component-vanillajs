@@ -355,11 +355,16 @@ class ChessBoardComponent extends HTMLElement {
         const inCellsBounds = cellColumnIndex >= 0 && cellColumnIndex <= 7 && cellLineIndex >= 0 && cellLineIndex <= 7;
         if (!inCellsBounds) return;
             
-        const pieceImageAtClickedSquare = this._logic ? this._pieceValueToPieceImage(this._logic.get(this._cellCoordinatesToAlgebraic({
+        const pieceValueAtClickedSquare = this._logic.get(this._cellCoordinatesToAlgebraic({
             file: this.reversed ? 7 - cellColumnIndex : cellColumnIndex, 
             rank: this.reversed ? cellLineIndex : 7-cellLineIndex,
-        }))) : undefined;
+        }));
+        const pieceImageAtClickedSquare = this._logic ? 
+            this._pieceValueToPieceImage(pieceValueAtClickedSquare) : undefined;
         if (!pieceImageAtClickedSquare) return;
+
+        const isOneOfPlayerInTurnPiece = pieceValueAtClickedSquare.color === this._logic.turn();
+        if (!isOneOfPlayerInTurnPiece) return;
 
         this._draggedPiece = pieceImageAtClickedSquare;
         this._draggedPieceOriginCell = {localX, localY};
