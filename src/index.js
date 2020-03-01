@@ -524,30 +524,38 @@ class ChessBoardComponent extends HTMLElement {
         const [originCellColIndex, originCellLineIndex] = this._getDraggedPieceOriginCellCoordinates();
         const [draggedPieceCellColIndex, draggedPieceCellLineIndex] = this._getDraggedPieceTargetCellCoordinates();
 
+        if ( [undefined, null].includes(draggedPieceCellColIndex) || 
+        [undefined, null].includes(draggedPieceCellLineIndex)) return;
+
+        const inBounds = draggedPieceCellColIndex >= 0 && draggedPieceCellColIndex <= 7
+                && draggedPieceCellLineIndex >= 0 && draggedPieceCellLineIndex <= 7;
+
+        if ( !inBounds ) return;
+
         const originCellDiv = document.createElement('div');
         originCellDiv.style.position = 'absolute';
         originCellDiv.style.width = this._cellsSize + 'px';
         originCellDiv.style.height = this._cellsSize + 'px';
-        originCellDiv.style.left = this._cellsSize * (0.5 + originCellColIndex) + 'px';
-        originCellDiv.style.top = this._cellsSize * (0.5 + originCellLineIndex) + 'px';
+        originCellDiv.style.left = (this._cellsSize * (0.5 + originCellColIndex)) + 'px';
+        originCellDiv.style.top = (this._cellsSize * (0.5 + originCellLineIndex)) + 'px';
         originCellDiv.style.backgroundColor = this.originCellColor;
         dndHighlightLayer.appendChild(originCellDiv);
 
         const dndCrossHorizPart = document.createElement('div');
         dndCrossHorizPart.style.position = 'absolute';
-        dndCrossHorizPart.style.width = this._cellsSize * 8 + 'px';
-        dndCrossHorizPart.style.height = this._cellsSize + 'px';
-        dndCrossHorizPart.style.left = this._cellsSize * 0.5 + 'px';
-        dndCrossHorizPart.style.top = this._cellsSize * (0.5 + draggedPieceCellLineIndex) + 'px';
+        dndCrossHorizPart.style.width = (this._cellsSize * 8) + 'px';
+        dndCrossHorizPart.style.height = (this._cellsSize) + 'px';
+        dndCrossHorizPart.style.left = (this._cellsSize * 0.5) + 'px';
+        dndCrossHorizPart.style.top = (this._cellsSize * (0.5 + draggedPieceCellLineIndex)) + 'px';
         dndCrossHorizPart.style.backgroundColor = this.dndCrossColor;
         dndHighlightLayer.appendChild(dndCrossHorizPart);
 
         const dndCrossVerticPart = document.createElement('div');
         dndCrossVerticPart.style.position = 'absolute';
         dndCrossVerticPart.style.width = this._cellsSize + 'px';
-        dndCrossVerticPart.style.height = this._cellsSize * 8 + 'px';
-        dndCrossVerticPart.style.left = this._cellsSize * (0.5 + draggedPieceCellColIndex) + 'px';
-        dndCrossVerticPart.style.top = this._cellsSize * 0.5 + 'px';
+        dndCrossVerticPart.style.height = (this._cellsSize * 8) + 'px';
+        dndCrossVerticPart.style.left = (this._cellsSize * (0.5 + draggedPieceCellColIndex)) + 'px';
+        dndCrossVerticPart.style.top = (this._cellsSize * 0.5) + 'px';
         dndCrossVerticPart.style.backgroundColor = this.dndCrossColor;
         dndHighlightLayer.appendChild(dndCrossVerticPart);
 
@@ -555,8 +563,8 @@ class ChessBoardComponent extends HTMLElement {
         targetCellDiv.style.position = 'absolute';
         targetCellDiv.style.width = this._cellsSize + 'px';
         targetCellDiv.style.height = this._cellsSize + 'px';
-        targetCellDiv.style.left = this._cellsSize * (0.5 + draggedPieceCellColIndex) + 'px';
-        targetCellDiv.style.top = this._cellsSize * (0.5 + draggedPieceCellLineIndex) + 'px';
+        targetCellDiv.style.left = (this._cellsSize * (0.5 + draggedPieceCellColIndex)) + 'px';
+        targetCellDiv.style.top = (this._cellsSize * (0.5 + draggedPieceCellLineIndex)) + 'px';
         targetCellDiv.style.backgroundColor = this.targetCellColor;
         dndHighlightLayer.appendChild(targetCellDiv);
     }
