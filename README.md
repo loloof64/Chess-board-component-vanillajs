@@ -23,18 +23,18 @@ Usage
 
 ### Properties
 
-| Name              | Role                                                  | Type    | Default                                                  |
+| Name              | Purpose                                               | Type    | Default                                                  |
 |-------------------|-------------------------------------------------------|---------|----------------------------------------------------------|
 | size              | Common size (width/height) of the board in pixels     | number  | 100.0                                                    |
 | background        | Background color of the board outside zone            | string  | #124589                                                  |
-| coordinates_color  | Color of the coordinates around the board             | string  | DarkOrange                                               |
-| white_cell_color    | Background color of the white cells of the board      | string  | GoldenRod                                                |
-| black_cell_color    | Background color of the black cells of the board      | string  | brown                                                    |
-| start_position     | First loaded position in Forsyth-Edwards Notation     | string  | rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1 |
+| coordinatesColor  | Color of the coordinates around the board             | string  | DarkOrange                                               |
+| whiteCellColor    | Background color of the white cells of the board      | string  | GoldenRod                                                |
+| blackCellColor    | Background color of the black cells of the board      | string  | brown                                                    |
+| startPosition     | First loaded position in Forsyth-Edwards Notation     | string  | rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1 |
 | reversed          | Whether black side is on top or not                   | boolean | false                                                    |
 | origin_cell_color | Color of the origin cell of the Drag and Drop         | string  | crimson                                                  |
 | target_cell_color | Color of the current target cell of the Drag and Drop | string  | ForestGreen                                              |
-| dnd_cross_color   | Color of the Drag and Drop cross indicator            | string  | DimGrey                                                  |                                               |
+| dnd_cross_color   | Color of the Drag and Drop cross indicator            | string  | DimGrey                                                  |
 
 ### Methods
 
