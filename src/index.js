@@ -6,13 +6,14 @@ import {
 
 const defaultSizeAttr = '100.0';
 const defaultBackgroundAttr = '#124589';
-const defaultCoordinatesColorAttr = 'darkorange';
-const defaultWhiteCellsColorAttr = 'goldenrod';
+const defaultCoordinatesColorAttr = 'DarkOrange';
+const defaultWhiteCellsColorAttr = 'GoldenRod';
 const defaultBlackCellsColorAttr = 'brown';
 const defaultStartPositionAttr = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
 const defaultReversedAttr = 'false';
-const defaultOriginCellColorAttr = 'darkOliveGreen';
-const defaultTargetCellColorAttr = 'crimson';
+const defaultOriginCellColorAttr = 'crimson';
+const defaultTargetCellColorAttr = 'ForestGreen';
+const defaultDndCrossColorAttr = 'DimGrey';
 
 class ChessBoardComponent extends HTMLElement {
     constructor(){
@@ -26,6 +27,7 @@ class ChessBoardComponent extends HTMLElement {
         this.reversed;
         this.originCellColor;
         this.targetCellColor;
+        this.dndCrossColor;
         
         this._cellsSize;
         this._logic;
@@ -47,6 +49,7 @@ class ChessBoardComponent extends HTMLElement {
        this.reversed = (this.getAttribute('reversed') || defaultReversedAttr) === 'true';
        this.originCellColor = this.getAttribute('origin_cell_color') || defaultOriginCellColorAttr;
        this.targetCellColor = this.getAttribute('target_cell_color') || defaultTargetCellColorAttr;
+       this.dndCrossColor = this.getAttribute('dnd_cross_color') ||  defaultDndCrossColorAttr;
        this._logic = new Chess(this.startPosition);
        this._render();
     }
@@ -56,7 +59,7 @@ class ChessBoardComponent extends HTMLElement {
             'size', 'background', 'coordinates_color',
             'white_cell_color', 'black_cell_color', 'start_position',
             'reversed',
-            'origin_cell_color', 'target_cell_color',
+            'origin_cell_color', 'target_cell_color', 'dnd_cross_color',
         ];
     }
 
@@ -105,6 +108,10 @@ class ChessBoardComponent extends HTMLElement {
         }
         else if (name === 'target_cell_color') {
             this.targetCellColor = newValue || defaultTargetCellColorAttr;
+            this._render();
+        }
+        else if (name === 'dnd_cross_color') {
+            this.dndCrossColor = newValue || defaultDndCrossColorAttr;
             this._render();
         }
     }
@@ -373,8 +380,8 @@ class ChessBoardComponent extends HTMLElement {
             const localY = event.clientY - thisClientRect.top;
 
             this._draggedPieceLocation = {localX, localY};
-            this._updateDragAndDropIndicators();
             this._updateDraggedPiece();
+            this._updateDragAndDropIndicators();
             
             const {cellColumnIndex, cellLineIndex} = this._localCoordinatesToCellCoordinates({localX, localY});
             
@@ -523,8 +530,26 @@ class ChessBoardComponent extends HTMLElement {
         originCellDiv.style.height = this._cellsSize + 'px';
         originCellDiv.style.left = this._cellsSize * (0.5 + originCellColIndex) + 'px';
         originCellDiv.style.top = this._cellsSize * (0.5 + originCellLineIndex) + 'px';
-        originCellDiv.style.background = this.originCellColor;
+        originCellDiv.style.backgroundColor = this.originCellColor;
         dndHighlightLayer.appendChild(originCellDiv);
+
+        const dndCrossHorizPart = document.createElement('div');
+        dndCrossHorizPart.style.position = 'absolute';
+        dndCrossHorizPart.style.width = this._cellsSize * 8 + 'px';
+        dndCrossHorizPart.style.height = this._cellsSize + 'px';
+        dndCrossHorizPart.style.left = this._cellsSize * 0.5 + 'px';
+        dndCrossHorizPart.style.top = this._cellsSize * (0.5 + draggedPieceCellLineIndex) + 'px';
+        dndCrossHorizPart.style.backgroundColor = this.dndCrossColor;
+        dndHighlightLayer.appendChild(dndCrossHorizPart);
+
+        const dndCrossVerticPart = document.createElement('div');
+        dndCrossVerticPart.style.position = 'absolute';
+        dndCrossVerticPart.style.width = this._cellsSize + 'px';
+        dndCrossVerticPart.style.height = this._cellsSize * 8 + 'px';
+        dndCrossVerticPart.style.left = this._cellsSize * (0.5 + draggedPieceCellColIndex) + 'px';
+        dndCrossVerticPart.style.top = this._cellsSize * 0.5 + 'px';
+        dndCrossVerticPart.style.backgroundColor = this.dndCrossColor;
+        dndHighlightLayer.appendChild(dndCrossVerticPart);
 
         const targetCellDiv = document.createElement('div');
         targetCellDiv.style.position = 'absolute';
@@ -532,11 +557,19 @@ class ChessBoardComponent extends HTMLElement {
         targetCellDiv.style.height = this._cellsSize + 'px';
         targetCellDiv.style.left = this._cellsSize * (0.5 + draggedPieceCellColIndex) + 'px';
         targetCellDiv.style.top = this._cellsSize * (0.5 + draggedPieceCellLineIndex) + 'px';
-        targetCellDiv.style.background = this.targetCellColor;
+        targetCellDiv.style.backgroundColor = this.targetCellColor;
         dndHighlightLayer.appendChild(targetCellDiv);
     }
 
     _cancelDragAndDrop() {
+        const dndHighlightLayer = this.shadowRoot.querySelector('#dnd_highlight_layer');
+        // Remove all children from Drag and drop highlight layer
+        let child = dndHighlightLayer.lastElementChild;
+        while(child) {
+            dndHighlightLayer.removeChild(child);
+            child = dndHighlightLayer.lastElementChild;
+        }
+
         this._draggedPiece = undefined;
         this._draggedPieceLocation = undefined;
         this._draggedPieceOriginCell = undefined;
