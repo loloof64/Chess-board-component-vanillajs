@@ -11,6 +11,8 @@ const defaultWhiteCellsColorAttr = 'goldenrod';
 const defaultBlackCellsColorAttr = 'brown';
 const defaultStartPositionAttr = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
 const defaultReversedAttr = 'false';
+const defaultOriginCellColorAttr = 'darkOliveGreen';
+const defaultTargetCellColorAttr = 'crimson';
 
 class ChessBoardComponent extends HTMLElement {
     constructor(){
@@ -22,6 +24,8 @@ class ChessBoardComponent extends HTMLElement {
         this.whiteCellColor;
         this.blackCellColor;
         this.reversed;
+        this.originCellColor;
+        this.targetCellColor;
         
         this._cellsSize;
         this._logic;
@@ -41,6 +45,8 @@ class ChessBoardComponent extends HTMLElement {
        this.blackCellColor = this.getAttribute('black_cell_color') || defaultBlackCellsColorAttr;
        this.startPosition = this.getAttribute('start_position') || defaultStartPositionAttr;
        this.reversed = (this.getAttribute('reversed') || defaultReversedAttr) === 'true';
+       this.originCellColor = this.getAttribute('origin_cell_color') || defaultOriginCellColorAttr;
+       this.targetCellColor = this.getAttribute('target_cell_color') || defaultTargetCellColorAttr;
        this._logic = new Chess(this.startPosition);
        this._render();
     }
@@ -50,6 +56,7 @@ class ChessBoardComponent extends HTMLElement {
             'size', 'background', 'coordinates_color',
             'white_cell_color', 'black_cell_color', 'start_position',
             'reversed',
+            'origin_cell_color', 'target_cell_color',
         ];
     }
 
@@ -92,6 +99,14 @@ class ChessBoardComponent extends HTMLElement {
             this.reversed = (newValue || defaultReversedAttr) === 'true';
             this._render();
         }
+        else if (name === 'origin_cell_color') {
+            this.originCellColor = newValue || defaultOriginCellColorAttr;
+            this._render();
+        }
+        else if (name === 'target_cell_color') {
+            this.targetCellColor = newValue || defaultTargetCellColorAttr;
+            this._render();
+        }
     }
 
     toggleSide() {
@@ -121,13 +136,23 @@ class ChessBoardComponent extends HTMLElement {
                     top: 0;
                 }
 
+                #dnd_highlight_layer {
+                    position: absolute;
+                    width: ${this.size}px;
+                    height: ${this.size}px;
+                    left: 0;
+                    top: 0;
+                    z-index: 3;
+                    opacity: 0.8;
+                }
+
                 #dnd_layer {
                     position: absolute;
                     width: ${this.size}px;
                     height: ${this.size}px;
                     left: 0;
                     top: 0;
-                    z-index: 5;
+                    z-index: 6;
                 }
 
                 .coordinate {
@@ -155,6 +180,7 @@ class ChessBoardComponent extends HTMLElement {
                     ${this._buildMediumCells()}
                     ${this._buildBottomCells()}
                 </div>
+                <div id="dnd_highlight_layer"></div>
                 <div id="dnd_layer">
                     ${this._buildDraggedPiece()}
                 </div>
@@ -188,6 +214,8 @@ class ChessBoardComponent extends HTMLElement {
     }
 
     _buildMediumCells() {
+        const [originCellColIndex, originCellLineIndex] = this._getDraggedPieceOriginCellCoordinates();
+
         const cells = [0,1,2,3,4,5,6,7].map(lineIndex => {
             const asciiDigit1 = 49;
             const letter = String.fromCharCode(asciiDigit1 + (this.reversed ? lineIndex : 7 - lineIndex) );
@@ -198,40 +226,33 @@ class ChessBoardComponent extends HTMLElement {
                 </div>
             `;
             const mediumCells = [0,1,2,3,4,5,6,7].map(colIndex => {
-                const isWhiteCell = (colIndex + lineIndex) % 2 === 0;
-                const background = isWhiteCell ? this.whiteCellColor : this.blackCellColor;
+                const file = this.reversed ? 7 - colIndex : colIndex;
+                const rank = this.reversed ? lineIndex : 7-lineIndex;
+                
+                const background = this._getBackgroundForCell({
+                    cellColumnIndex: colIndex, 
+                    cellLineIndex: lineIndex,
+                });
 
                 let pieceImage = this._logic ? this._pieceValueToPieceImage(this._logic.get(this._cellCoordinatesToAlgebraic({
-                    file: this.reversed ? 7 - colIndex : colIndex, 
-                    rank: this.reversed ? lineIndex : 7-lineIndex,
+                    file, rank,
                 }))) : undefined;
 
-                let originCellColIndex;
-                let originCellLineIndex;
-
-                if (this._draggedPieceOriginCell) {
-                    let {cellColumnIndex, cellLineIndex} = this._localCoordinatesToCellCoordinates(this._draggedPieceOriginCell);
-                    originCellColIndex = cellColumnIndex;
-                    originCellLineIndex = cellLineIndex;
-                }
-                else {
-                    originCellColIndex = undefined;
-                    originCellLineIndex = undefined;
-                }
-
-                const isMovedPiece = colIndex === originCellColIndex &&
+                const isMovedPieceOriginCell = colIndex === originCellColIndex &&
                     lineIndex === originCellLineIndex;
 
-                if (isMovedPiece) pieceImage = undefined;
+                if (isMovedPieceOriginCell) pieceImage = undefined;
+
+                const cellId = `cell_${file}${rank}`;
 
                 return pieceImage ? 
                 `
-                    <div class="cell" style="background-color: ${background}">
+                    <div id=${cellId} class="cell" style="background-color: ${background}">
                         ${pieceImage}
                     </div> 
                 ` : 
                 `
-                <div class="cell" style="background-color: ${background}">
+                <div  id=${cellId} class="cell" style="background-color: ${background}">
                 </div> 
                 `
             });
@@ -352,6 +373,7 @@ class ChessBoardComponent extends HTMLElement {
             const localY = event.clientY - thisClientRect.top;
 
             this._draggedPieceLocation = {localX, localY};
+            this._updateDragAndDropIndicators();
             this._updateDraggedPiece();
             
             const {cellColumnIndex, cellLineIndex} = this._localCoordinatesToCellCoordinates({localX, localY});
@@ -441,6 +463,77 @@ class ChessBoardComponent extends HTMLElement {
             return; 
         }
         draggedPieceElement.style.top = updatedY;
+    }
+
+    _getDraggedPieceOriginCellCoordinates() {
+        let originCellColIndex;
+        let originCellLineIndex;
+
+        if (this._draggedPieceOriginCell) {
+            const cellCoordinates = 
+                this._localCoordinatesToCellCoordinates(this._draggedPieceOriginCell);
+            originCellColIndex = cellCoordinates.cellColumnIndex;
+            originCellLineIndex = cellCoordinates.cellLineIndex;
+        }
+        else {
+            originCellColIndex = undefined;
+            originCellLineIndex = undefined;
+        }
+
+        return [originCellColIndex, originCellLineIndex];
+    }
+
+    _getDraggedPieceTargetCellCoordinates() {
+        let draggedPieceCellColIndex;
+        let draggedPieceCellLineIndex;
+
+        if (this._draggedPieceLocation) {
+            const cellCoordinates =
+                this._localCoordinatesToCellCoordinates(this._draggedPieceLocation);
+            draggedPieceCellColIndex = cellCoordinates.cellColumnIndex;
+            draggedPieceCellLineIndex = cellCoordinates.cellLineIndex;
+        }
+
+        return [draggedPieceCellColIndex, draggedPieceCellLineIndex];
+    }
+
+    _getBackgroundForCell({cellColumnIndex, cellLineIndex}) {
+        const isWhiteCell = (cellColumnIndex + cellLineIndex) % 2 === 0;
+        const background = isWhiteCell ? this.whiteCellColor : this.blackCellColor;
+
+        return background;
+    }
+
+    _updateDragAndDropIndicators() {
+        const dndHighlightLayer = this.shadowRoot.querySelector('#dnd_highlight_layer');
+
+        // Remove all children
+        let child = dndHighlightLayer.lastElementChild;
+        while(child) {
+            dndHighlightLayer.removeChild(child);
+            child = dndHighlightLayer.lastElementChild;
+        }
+
+        const [originCellColIndex, originCellLineIndex] = this._getDraggedPieceOriginCellCoordinates();
+        const [draggedPieceCellColIndex, draggedPieceCellLineIndex] = this._getDraggedPieceTargetCellCoordinates();
+
+        const originCellDiv = document.createElement('div');
+        originCellDiv.style.position = 'absolute';
+        originCellDiv.style.width = this._cellsSize + 'px';
+        originCellDiv.style.height = this._cellsSize + 'px';
+        originCellDiv.style.left = this._cellsSize * (0.5 + originCellColIndex) + 'px';
+        originCellDiv.style.top = this._cellsSize * (0.5 + originCellLineIndex) + 'px';
+        originCellDiv.style.background = this.originCellColor;
+        dndHighlightLayer.appendChild(originCellDiv);
+
+        const targetCellDiv = document.createElement('div');
+        targetCellDiv.style.position = 'absolute';
+        targetCellDiv.style.width = this._cellsSize + 'px';
+        targetCellDiv.style.height = this._cellsSize + 'px';
+        targetCellDiv.style.left = this._cellsSize * (0.5 + draggedPieceCellColIndex) + 'px';
+        targetCellDiv.style.top = this._cellsSize * (0.5 + draggedPieceCellLineIndex) + 'px';
+        targetCellDiv.style.background = this.targetCellColor;
+        dndHighlightLayer.appendChild(targetCellDiv);
     }
 
     _cancelDragAndDrop() {

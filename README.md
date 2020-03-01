@@ -41,4 +41,4 @@ You can build with the command (in the terminal) `$ npx webpack` from the root o
 ## Credits
 
 Original pieces vectors definitions from CBurnett and found on [Wikimedia commons](https://commons.wikimedia.org/wiki/Category:SVG_chess_pieces).
-Using [ChessJS library](https://github.com/jhlywa/chess.js).
+Using [ChessJS library](https://github.com/jhlywa/chess.js), which is bundled in the produced script.
