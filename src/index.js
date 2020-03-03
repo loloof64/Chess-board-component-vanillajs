@@ -456,9 +456,13 @@ class ChessBoardComponent extends HTMLElement {
     }
 
     _build_promotion_modal(modalId, forWhitePlayer) {
-        const borderSize = this._cellsSize * 0.5;
+        const padding = this._cellsSize * 0.5;
+        const marginX = this._cellsSize * 2.0;
+        const marginY = this._cellsSize * 3.0;
         const fontSize = this._cellsSize * 0.5;
-        let rootDivStyle = `"margin: ${borderSize}px; display: grid; position: absolute; `;
+        let rootDivStyle = `"padding: ${padding}px; display: grid; position: absolute; `;
+        rootDivStyle += `margin-left: ${marginX}px; margin-right: ${marginX}px; `;
+        rootDivStyle += `margin-top: ${marginY}px; margin-bottom: ${marginY}px; `;
         rootDivStyle += `width: ${this._cellsSize * 4}px; height: ${this._cellsSize * 2}px;`;
         rootDivStyle += `grid-template: 1fr 1fr / 1fr 1fr 1fr 1fr; `;
         rootDivStyle += `background-color: white;"`;
