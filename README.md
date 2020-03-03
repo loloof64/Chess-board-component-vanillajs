@@ -18,23 +18,25 @@ Usage
     origin_cell_color="red"
     target_cell_color="green"
     dnd_cross_color="purple"
+    promotion_dialog_title="Promotion piece"
 ></loloof64-chessboard>
 ```
 
 ### Properties
 
-| Name              | Purpose                                               | Type    | Default                                                  |
-|-------------------|-------------------------------------------------------|---------|----------------------------------------------------------|
-| size              | Common size (width/height) of the board in pixels     | number  | 100.0                                                    |
-| background        | Background color of the board outside zone            | string  | #124589                                                  |
-| coordinatesColor  | Color of the coordinates around the board             | string  | DarkOrange                                               |
-| whiteCellColor    | Background color of the white cells of the board      | string  | GoldenRod                                                |
-| blackCellColor    | Background color of the black cells of the board      | string  | brown                                                    |
-| startPosition     | First loaded position in Forsyth-Edwards Notation     | string  | rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1 |
-| reversed          | Whether black side is on top or not                   | boolean | false                                                    |
-| origin_cell_color | Color of the origin cell of the Drag and Drop         | string  | crimson                                                  |
-| target_cell_color | Color of the current target cell of the Drag and Drop | string  | ForestGreen                                              |
-| dnd_cross_color   | Color of the Drag and Drop cross indicator            | string  | DimGrey                                                  |
+| Name                   | Purpose                                               | Type    | Default                                                  |
+|------------------------|-------------------------------------------------------|---------|----------------------------------------------------------|
+| size                   | Common size (width/height) of the board in pixels     | number  | 100.0                                                    |
+| background             | Background color of the board outside zone            | string  | #124589                                                  |
+| coordinatesColor       | Color of the coordinates around the board             | string  | DarkOrange                                               |
+| whiteCellColor         | Background color of the white cells of the board      | string  | GoldenRod                                                |
+| blackCellColor         | Background color of the black cells of the board      | string  | brown                                                    |
+| startPosition          | First loaded position in Forsyth-Edwards Notation     | string  | rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1 |
+| reversed               | Whether black side is on top or not                   | boolean | false                                                    |
+| origin_cell_color      | Color of the origin cell of the Drag and Drop         | string  | crimson                                                  |
+| target_cell_color      | Color of the current target cell of the Drag and Drop | string  | ForestGreen                                              |
+| dnd_cross_color        | Color of the Drag and Drop cross indicator            | string  | DimGrey                                                  |
+| promotion_dialog_title | Title of the promotion selection dialog               | string  | Select the promotion piece                               |
 
 ### Methods
 

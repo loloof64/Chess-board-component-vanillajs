@@ -14,6 +14,7 @@ const defaultReversedAttr = 'false';
 const defaultOriginCellColorAttr = 'crimson';
 const defaultTargetCellColorAttr = 'ForestGreen';
 const defaultDndCrossColorAttr = 'DimGrey';
+const defaultPromotionDialogTitleAttr = 'Select the promotion piece';
 
 class ChessBoardComponent extends HTMLElement {
     constructor(){
@@ -28,6 +29,7 @@ class ChessBoardComponent extends HTMLElement {
         this.originCellColor;
         this.targetCellColor;
         this.dndCrossColor;
+        this.promotionDialogTitle;
         
         this._cellsSize;
         this._logic;
@@ -36,6 +38,20 @@ class ChessBoardComponent extends HTMLElement {
         this._draggedPiece;
         this._draggedPieceLocation;
         this._draggedPieceOriginCell;
+        this._waitingForPromotionPiece;
+        this._pendingPromotionMove;
+        this._pendingPromotionMoveIsForWhite;
+        this._queenPromotionButtonWhite;
+        this._queenPromotionButtonBlack;
+        this._rookPromotionButtonWhite;
+        this._rookPromotionButtonBlack;
+        this._bishopPromotionButtonWhite;
+        this._bishopPromotionButtonBlack;
+        this._knightPromotionButtonWhite;
+        this._knightPromotionButtonBlack;
+        this._promotionDialogOverlay;
+        this._promotionDialogWhite;
+        this._promotionDialogBlack;
     }
 
     connectedCallback() {
@@ -49,8 +65,10 @@ class ChessBoardComponent extends HTMLElement {
        this.reversed = (this.getAttribute('reversed') || defaultReversedAttr) === 'true';
        this.originCellColor = this.getAttribute('origin_cell_color') || defaultOriginCellColorAttr;
        this.targetCellColor = this.getAttribute('target_cell_color') || defaultTargetCellColorAttr;
-       this.dndCrossColor = this.getAttribute('dnd_cross_color') ||  defaultDndCrossColorAttr;
+       this.dndCrossColor = this.getAttribute('dnd_cross_color') || defaultDndCrossColorAttr;
+       this.promotionDialogTitle = this.getAttribute('defaultPromotionDialogTitleAttr') ||  defaultPromotionDialogTitleAttr;
        this._logic = new Chess(this.startPosition);
+
        this._render();
     }
 
@@ -60,14 +78,96 @@ class ChessBoardComponent extends HTMLElement {
             'white_cell_color', 'black_cell_color', 'start_position',
             'reversed',
             'origin_cell_color', 'target_cell_color', 'dnd_cross_color',
+            'promotion_dialog_title',
         ];
     }
 
+    _subscribeStandardEvents() {
+       this._rootElement = this.shadowRoot.querySelector('#root');
+       this._rootElement.addEventListener('mousedown', this._handleMouseDown.bind(this));
+       this._rootElement.addEventListener('mousemove', this._handleMouseMove.bind(this));
+       this._rootElement.addEventListener('mouseup', this._handleMouseUp.bind(this));
+       this._rootElement.addEventListener('mouseleave', this._handleMouseLeave.bind(this));
+    }
+
+    _subscribePromotionButtonsEvents() {
+       this._queenPromotionButtonWhite = this.shadowRoot.querySelector('#promotion_queen_w');
+       this._queenPromotionButtonBlack = this.shadowRoot.querySelector('#promotion_queen_b');
+       this._rookPromotionButtonWhite = this.shadowRoot.querySelector('#promotion_rook_w');
+       this._rookPromotionButtonBlack = this.shadowRoot.querySelector('#promotion_rook_b');
+       this._bishopPromotionButtonWhite = this.shadowRoot.querySelector('#promotion_bishop_w');
+       this._bishopPromotionButtonBlack = this.shadowRoot.querySelector('#promotion_bishop_b');
+       this._knightPromotionButtonWhite = this.shadowRoot.querySelector('#promotion_knight_w');
+       this._knightPromotionButtonBlack = this.shadowRoot.querySelector('#promotion_knight_b');
+       this._promotionDialogWhite = this.shadowRoot.querySelector('#promotion_selection_layer_white');
+       this._promotionDialogBlack = this.shadowRoot.querySelector('#promotion_selection_layer_black');
+
+       this._queenPromotionButtonWhite.addEventListener('click', this._handlePromotionSelection.bind(this, 'q'));
+       this._queenPromotionButtonBlack.addEventListener('click', this._handlePromotionSelection.bind(this, 'q'));
+       this._rookPromotionButtonWhite.addEventListener('click', this._handlePromotionSelection.bind(this, 'r'));
+       this._rookPromotionButtonBlack.addEventListener('click', this._handlePromotionSelection.bind(this, 'r'));
+       this._bishopPromotionButtonWhite.addEventListener('click', this._handlePromotionSelection.bind(this, 'b'));
+       this._bishopPromotionButtonBlack.addEventListener('click', this._handlePromotionSelection.bind(this, 'b'));
+       this._knightPromotionButtonWhite.addEventListener('click', this._handlePromotionSelection.bind(this, 'n'));
+       this._knightPromotionButtonBlack.addEventListener('click', this._handlePromotionSelection.bind(this, 'n'));
+
+       this._promotionDialogOverlay = this.shadowRoot.querySelector('#promotion_background_overlay');
+       this._promotionDialogOverlay.addEventListener('click', this._cleanPendingPromotionState.bind(this));
+
+       this._promotionDialogWhite.addEventListener('mousedown', this._cancelEvent.bind(this));
+       this._promotionDialogBlack.addEventListener('mousedown', this._cancelEvent.bind(this));
+       this._promotionDialogOverlay.addEventListener('mousedown', this._cancelEvent.bind(this));
+    }
+
+    _unsubscribeStandardEvents() {
+        if (this._rootElement) {
+            this._rootElement.removeEventListener('mousedown', this._handleMouseDown.bind(this));
+            this._rootElement.removeEventListener('mousemove', this._handleMouseMove.bind(this));
+            this._rootElement.removeEventListener('mouseup', this._handleMouseUp.bind(this));
+            this._rootElement.removeEventListener('mouseleave', this._handleMouseLeave.bind(this));
+        }
+    }
+
+    _unsubscribePromotionButtonsEvents () {
+        if (this._queenPromotionButtonWhite)
+            this._queenPromotionButtonWhite.removeEventListener('click', this._handlePromotionSelection.bind(this, 'q'));
+        
+        if (this._queenPromotionButtonBlack)
+            this._queenPromotionButtonBlack.removeEventListener('click', this._handlePromotionSelection.bind(this, 'q'));
+        
+        if (this._rookPromotionButtonWhite)
+            this._rookPromotionButtonWhite.removeEventListener('click', this._handlePromotionSelection.bind(this, 'r'));
+        
+        if (this._rookPromotionButtonBlack)
+            this._rookPromotionButtonBlack.removeEventListener('click', this._handlePromotionSelection.bind(this, 'r'));
+        
+        if (this._bishopPromotionButtonWhite)
+            this._bishopPromotionButtonWhite.removeEventListener('click', this._handlePromotionSelection.bind(this, 'b'));
+        
+        if (this._bishopPromotionButtonBlack)
+            this._bishopPromotionButtonBlack.removeEventListener('click', this._handlePromotionSelection.bind(this, 'b'));
+        
+        if (this._knightPromotionButtonWhite)
+            this._knightPromotionButtonWhite.removeEventListener('click', this._handlePromotionSelection.bind(this, 'n'));
+        
+        if (this._knightPromotionButtonBlack)
+            this._knightPromotionButtonBlack.removeEventListener('click', this._handlePromotionSelection.bind(this, 'n'));
+
+        if (this._promotionDialogOverlay) {
+            this._promotionDialogOverlay.removeEventListener('mousedown', this._cancelEvent.bind(this));
+            this._promotionDialogOverlay.removeEventListener('click', this._cleanPendingPromotionState.bind(this));
+        }
+
+        if (this._promotionDialogWhite)
+            this._promotionDialogWhite.removeEventListener('mousedown', this._cancelEvent.bind(this));
+
+        if (this._promotionDialogBlack)
+            this._promotionDialogBlack.removeEventListener('mousedown', this._cancelEvent.bind(this));
+    }
+
     disconnectedCallback() {
-        this._rootElement.removeEventListener('mousedown', this._handleMouseDown.bind(this));
-        this._rootElement.removeEventListener('mousemove', this._handleMouseMove.bind(this));
-        this._rootElement.removeEventListener('mouseup', this._handleMouseUp.bind(this));
-        this._rootElement.removeEventListener('mouseleave', this._handleMouseLeave.bind(this));
+        this._unsubscribeStandardEvents();
+        this._unsubscribePromotionButtonsEvents();
     }
 
     attributeChangedCallback(name, oldValue, newValue) {
@@ -114,6 +214,9 @@ class ChessBoardComponent extends HTMLElement {
             this.dndCrossColor = newValue || defaultDndCrossColorAttr;
             this._render();
         }
+        else if (name === 'promotion_dialog_title') {
+            this.promotionDialogTitle = newValue || defaultPromotionDialogTitleAttr;
+        }
     }
 
     toggleSide() {
@@ -122,6 +225,9 @@ class ChessBoardComponent extends HTMLElement {
     }
 
     _render() {
+        this._unsubscribeStandardEvents();
+        this._unsubscribePromotionButtonsEvents();
+
         const halfCellSize = this._cellsSize * 0.5;
         const commonGridTemplate = `${halfCellSize}px repeat(8, ${this._cellsSize}px) ${halfCellSize}px`;
 
@@ -149,12 +255,43 @@ class ChessBoardComponent extends HTMLElement {
                     height: ${this.size}px;
                     left: 0;
                     top: 0;
-                    z-index: 3;
+                    z-index: 1;
                     opacity: 0.8;
                 }
 
                 #dnd_layer {
                     position: absolute;
+                    width: ${this.size}px;
+                    height: ${this.size}px;
+                    left: 0;
+                    top: 0;
+                    z-index: 2;
+                }
+
+                #promotion_background_overlay {
+                    position: absolute;
+                    visibility: hidden;
+                    width: ${this.size}px;
+                    height: ${this.size}px;
+                    left: 0;
+                    top: 0;
+                    z-index: 4;
+                    background-color: rgba(0,0,0,0.8);
+                }
+
+                #promotion_selection_layer_black {
+                    position: absolute;
+                    visibility: hidden;
+                    width: ${this.size}px;
+                    height: ${this.size}px;
+                    left: 0;
+                    top: 0;
+                    z-index: 6;
+                }
+
+                #promotion_selection_layer_white {
+                    position: absolute;
+                    visibility: hidden;
                     width: ${this.size}px;
                     height: ${this.size}px;
                     left: 0;
@@ -191,14 +328,14 @@ class ChessBoardComponent extends HTMLElement {
                 <div id="dnd_layer">
                     ${this._buildDraggedPiece()}
                 </div>
+                <div id="promotion_background_overlay"></div>
+                ${this._build_promotion_modal('promotion_selection_layer_black', false)}
+                ${this._build_promotion_modal('promotion_selection_layer_white', true)}
             </div>
         `;
 
-        this._rootElement = this.shadowRoot.querySelector('#root');
-        this._rootElement.addEventListener('mousedown', this._handleMouseDown.bind(this));
-        this._rootElement.addEventListener('mousemove', this._handleMouseMove.bind(this));
-        this._rootElement.addEventListener('mouseup', this._handleMouseUp.bind(this));
-        this._rootElement.addEventListener('mouseleave', this._handleMouseLeave.bind(this));
+        this._subscribeStandardEvents();
+        this._subscribePromotionButtonsEvents();
     }
 
     _buildTopCells() {
@@ -318,6 +455,33 @@ class ChessBoardComponent extends HTMLElement {
         `
     }
 
+    _build_promotion_modal(modalId, forWhitePlayer) {
+        const borderSize = this._cellsSize * 0.5;
+        const fontSize = this._cellsSize * 0.5;
+        let rootDivStyle = `"margin: ${borderSize}px; display: grid; position: absolute; `;
+        rootDivStyle += `width: ${this._cellsSize * 4}px; height: ${this._cellsSize * 2}px;`;
+        rootDivStyle += `grid-template: 1fr 1fr / 1fr 1fr 1fr 1fr; `;
+        rootDivStyle += `background-color: white;"`;
+        const titleStyle = `"color: black; font-size: ${fontSize}px; grid-column: 1 / span 4; font-weight: bold;"`;
+
+        const queenPiece = forWhitePlayer ? WhiteQueen(this._cellsSize) : BlackQueen(this._cellsSize);
+        const rookPiece = forWhitePlayer ? WhiteRook(this._cellsSize) : BlackRook(this._cellsSize);
+        const bishopPiece = forWhitePlayer ? WhiteBishop(this._cellsSize) : BlackBishop(this._cellsSize);
+        const knightPiece = forWhitePlayer ? WhiteKnight(this._cellsSize) : BlackKnight(this._cellsSize);
+
+        const sideId = forWhitePlayer ? 'w' : 'b';
+
+        return `
+            <div id="${modalId}" style=${rootDivStyle}>
+                <span style=${titleStyle}>${this.promotionDialogTitle}</span>
+                <div id="promotion_queen_${sideId}">${queenPiece}</div>
+                <div id="promotion_rook_${sideId}">${rookPiece}</div>
+                <div id="promotion_bishop_${sideId}">${bishopPiece}</div>
+                <div id="promotion_knight_${sideId}">${knightPiece}</div>
+            </div>
+        `;
+    }
+
     _cellCoordinatesToAlgebraic({file, rank}) {
         const asciiDigit1 = 49;
         const asciiLowerA = 97;
@@ -344,7 +508,7 @@ class ChessBoardComponent extends HTMLElement {
 
     _handleMouseDown(event) {
         event.preventDefault();     
-        
+
         const thisClientRect = this.shadowRoot.querySelector('#root').getBoundingClientRect();
         
         const localX = event.clientX - thisClientRect.left;
@@ -377,7 +541,7 @@ class ChessBoardComponent extends HTMLElement {
     _handleMouseMove(event) {
         event.preventDefault();
 
-        if (this._dndStarted) {
+        if (this._dndStarted && [undefined, null].includes(this._pendingPromotionMove)) {
 
             const thisClientRect = this.shadowRoot.querySelector('#root').getBoundingClientRect();
             
@@ -401,6 +565,7 @@ class ChessBoardComponent extends HTMLElement {
 
         const dndAlreadyCancelled = ! this._draggedPiece;
         if (dndAlreadyCancelled) return;
+        if (! [undefined, null].includes(this._pendingPromotionMove) ) return;
 
         const thisClientRect = this.shadowRoot.querySelector('#root').getBoundingClientRect();
         
@@ -412,6 +577,7 @@ class ChessBoardComponent extends HTMLElement {
         const inCellsBounds = cellColumnIndex >= 0 && cellColumnIndex <= 7 && cellLineIndex >= 0 && cellLineIndex <= 7;
         if (!inCellsBounds) {
             this._cancelDragAndDrop();
+            this._render();
             return;
         };
 
@@ -432,20 +598,41 @@ class ChessBoardComponent extends HTMLElement {
             endCellFile, endCellRank,
         });
 
-        if (validMove){
-            const moveParams = this._convertMoveToObject({
+        if (!validMove) {
+            this._cancelDragAndDrop();
+            this._render();
+            return;
+        }
+
+        const isPromotionMove = this._isPromotionMove({
+            startCellFile, startCellRank,
+            endCellFile, endCellRank,
+        });
+
+        if (isPromotionMove) {
+            this._waitingForPromotionPiece = true;
+            this._pendingPromotionMoveIsForWhite = this._logic.turn() === 'w';
+            this._pendingPromotionMove = this._convertMoveToObject({
                 startCellFile, startCellRank,
                 endCellFile, endCellRank
             });
-            this._logic.move(moveParams);
-            this._render();
+            this._tryToShowPromotionDialog();
+            return;
         }
+
+        const moveParams = this._convertMoveToObject({
+            startCellFile, startCellRank,
+            endCellFile, endCellRank
+        });
+        this._logic.move(moveParams);
+        this._render();
+
         this._cancelDragAndDrop();
     }
 
     _handleMouseLeave(event) {
         event.preventDefault();
-        this._cancelDragAndDrop();
+        if ([null, undefined].includes(this._pendingPromotionMove)) this._cancelDragAndDrop();
     }
 
     _updateDraggedPiece() {
@@ -587,7 +774,16 @@ class ChessBoardComponent extends HTMLElement {
         this._draggedPieceLocation = undefined;
         this._draggedPieceOriginCell = undefined;
         this._dndStarted = false;
+        this._pendingPromotionMove = undefined;
+        this._pendingPromotionMoveIsForWhite = undefined;
+        this._waitingForPromotionPiece = false;
         this._render();
+    }
+
+    _cancelEvent(event) {
+        if (event) {
+            event.preventDefault();
+        }
     }
 
     _localCoordinatesToCellCoordinates(localCoordinates) {
@@ -613,6 +809,17 @@ class ChessBoardComponent extends HTMLElement {
         return logicClone.move(moveParams) !== null;
     }
 
+    _isPromotionMove({
+        startCellFile, startCellRank,
+        endCellRank,
+    }) {
+        const movingPiece = this._logic.get(this._cellCoordinatesToAlgebraic({
+            file: startCellFile, rank: startCellRank
+        }));
+        if (movingPiece.type !== 'p') return;
+        return movingPiece.color === 'w' ? endCellRank === 7 : endCellRank === 0;
+    }
+
     _convertMoveToObject({
         startCellFile, startCellRank,
         endCellFile, endCellRank,
@@ -633,6 +840,54 @@ class ChessBoardComponent extends HTMLElement {
         };
 
         return moveParams;
+    }
+
+    _tryToShowPromotionDialog() {
+        if (this._waitingForPromotionPiece) {
+            const whitePromotionDialog = this.shadowRoot.querySelector('#promotion_selection_layer_white');
+            const blackPromotionDialog = this.shadowRoot.querySelector('#promotion_selection_layer_black');
+            const promotionDialogOverlay = this.shadowRoot.querySelector('#promotion_background_overlay');
+
+            promotionDialogOverlay.style.visibility = 'visible';
+            if (this._pendingPromotionMoveIsForWhite) {
+                whitePromotionDialog.style.visibility = 'visible';
+            }
+            else {
+                blackPromotionDialog.style.visibility = 'visible';
+            }
+        }
+    }
+
+    _handlePromotionSelection(promotionType) {
+        this._tryToCommitHumanPromotionMove(promotionType);
+        this._closePromotionDialog();
+        this._cancelDragAndDrop();
+        this._render();
+    }
+
+    _tryToCommitHumanPromotionMove(promotionType) {
+        if (this._waitingForPromotionPiece) {
+            const move = {...this._pendingPromotionMove, promotion: promotionType};
+            this._logic.move(move);
+        }
+    }
+
+    _cleanPendingPromotionState() {
+        this._pendingPromotionMove = undefined;
+        this._pendingPromotionMoveIsForWhite = undefined;
+        this._waitingForPromotionPiece = false;
+    }
+
+    _closePromotionDialog() {
+        const whitePromotionDialog = this.shadowRoot.querySelector('#promotion_selection_layer_white');
+        const blackPromotionDialog = this.shadowRoot.querySelector('#promotion_selection_layer_black');
+        const promotionDialogOverlay = this.shadowRoot.querySelector('#promotion_background_overlay');
+
+        whitePromotionDialog.style.visibility = 'hidden';
+        blackPromotionDialog.style.visibility = 'hidden';
+        promotionDialogOverlay.style.visibility = 'hidden';
+
+        this._cleanPendingPromotionState();
     }
 }
 
