@@ -57,7 +57,7 @@ Usage
         startCellFile, startCellRank,
         endCellFile, endCellRank,
         promotion = 'q',
-  }): Tries to play the given move on the component, only if the current player is defined as an external user. Returns a Promise. All coordinates start from 0 (file 0 = 'A', rank 0 = '1'). Valid promotion values are 'q', 'r', 'b' and 'n'.
+  }): Tries to play the given move on the component, only if the current player is defined as an external user. Returns a Promise. All coordinates, integers, start from 0 (file 0 = 'A', rank 0 = '1'). Valid promotion values are 'q', 'r', 'b' and 'n'.
 
 ## Developers
 
