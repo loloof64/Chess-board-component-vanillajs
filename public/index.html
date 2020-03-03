@@ -11,6 +11,24 @@
             var board = document.querySelector('loloof64-chessboard');
             board.toggleSide();
         }
+
+        function commitMove() {
+            const startFile = parseInt(document.querySelector('#startFile').value);
+            const startRank = parseInt(document.querySelector('#startRank').value);
+            const endFile = parseInt(document.querySelector('#endFile').value);
+            const endRank = parseInt(document.querySelector('#endRank').value);
+            const promotion = document.querySelector('#promotion').value;
+
+            var board = document.querySelector('loloof64-chessboard');
+            var params = {
+                startCellFile: startFile,
+                startCellRank: startRank,
+                endCellFile: endFile,
+                endCellRank: endRank,
+                promotion: promotion
+            };
+            board.playMove(params).then(() => {}).catch(() => console.error('Could not commit move !'));
+        }
     </script>
 
     <style>
@@ -34,19 +52,38 @@
                 coordinates_color="yellow"
                 white_cell_color="navajowhite"
                 black_cell_color="peru"
-                start_position="8/8/8/8/4pk2/8/8/4K3 b - - 0 1"
+                start_position="8/3kPK2/8/8/8/8/8/8 b - - 0 1"
                 reversed="true"
                 origin_cell_color="red"
                 target_cell_color="green"
                 dnd_cross_color="purple"
                 promotion_dialog_title="Promotion piece"
+                white_player_human="false"
+                black_player_human="true"
             ></loloof64-chessboard>
         </div>
         </hr>
         <button onclick="toggleBoard();">Toggle</button>
-    </div>
-
-    <hr />
-    <loloof64-chessboard size="180"></loloof64-chessboard>
+        <div>
+            <label for='startFile'>Start file</label>
+            <input type='text' id='startFile' name='startFile'>
+        </div>
+        <div>
+            <label for='startRank'>Start rank</label>
+            <input type='text' id='startRank' name='startRank'>
+        </div>
+        <div>
+            <label for='endFile'>End file</label>
+            <input type='text' id='endFile' name='endFile'>
+        </div>
+        <div>
+            <label for='endRank'>End rank</label>
+            <input type='text' id='endRank' name='endRank'>
+        </div>
+        <div>
+            <label for='promotion'>Promotion</label>
+            <input type='text' id='promotion' name='promotion'>
+        </div>
+        <button onclick="commitMove();">Jouer</button>
 </body>
 </html>

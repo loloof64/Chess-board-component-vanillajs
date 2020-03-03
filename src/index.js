@@ -15,6 +15,8 @@ const defaultOriginCellColorAttr = 'crimson';
 const defaultTargetCellColorAttr = 'ForestGreen';
 const defaultDndCrossColorAttr = 'DimGrey';
 const defaultPromotionDialogTitleAttr = 'Select the promotion piece';
+const defaultWhitePlayerIsHumanAttr = 'true';
+const defaultBlackPlayerIsHumanAttr = 'true';
 
 class ChessBoardComponent extends HTMLElement {
     constructor(){
@@ -30,6 +32,8 @@ class ChessBoardComponent extends HTMLElement {
         this.targetCellColor;
         this.dndCrossColor;
         this.promotionDialogTitle;
+        this.whitePlayerHuman;
+        this.blackPlayerHuman;
         
         this._cellsSize;
         this._logic;
@@ -55,21 +59,25 @@ class ChessBoardComponent extends HTMLElement {
     }
 
     connectedCallback() {
-       this.size = parseFloat(this.getAttribute('size') || defaultSizeAttr);
-       this._cellsSize = this.size / 9.0;
-       this.backgroundColor = this.getAttribute('background') || defaultBackgroundAttr;
-       this.coordinatesColor = this.getAttribute('coordinates_color') || defaultCoordinatesColorAttr;
-       this.whiteCellColor = this.getAttribute('white_cell_color') || defaultWhiteCellsColorAttr;
-       this.blackCellColor = this.getAttribute('black_cell_color') || defaultBlackCellsColorAttr;
-       this.startPosition = this.getAttribute('start_position') || defaultStartPositionAttr;
-       this.reversed = (this.getAttribute('reversed') || defaultReversedAttr) === 'true';
-       this.originCellColor = this.getAttribute('origin_cell_color') || defaultOriginCellColorAttr;
-       this.targetCellColor = this.getAttribute('target_cell_color') || defaultTargetCellColorAttr;
-       this.dndCrossColor = this.getAttribute('dnd_cross_color') || defaultDndCrossColorAttr;
-       this.promotionDialogTitle = this.getAttribute('defaultPromotionDialogTitleAttr') ||  defaultPromotionDialogTitleAttr;
-       this._logic = new Chess(this.startPosition);
+        this.size = parseFloat(this.getAttribute('size') || defaultSizeAttr);
+        this._cellsSize = this.size / 9.0;
+        this.backgroundColor = this.getAttribute('background') || defaultBackgroundAttr;
+        this.coordinatesColor = this.getAttribute('coordinates_color') || defaultCoordinatesColorAttr;
+        this.whiteCellColor = this.getAttribute('white_cell_color') || defaultWhiteCellsColorAttr;
+        this.blackCellColor = this.getAttribute('black_cell_color') || defaultBlackCellsColorAttr;
+        this.startPosition = this.getAttribute('start_position') || defaultStartPositionAttr;
+        this.reversed = (this.getAttribute('reversed') || defaultReversedAttr) === 'true';
+        this.originCellColor = this.getAttribute('origin_cell_color') || defaultOriginCellColorAttr;
+        this.targetCellColor = this.getAttribute('target_cell_color') || defaultTargetCellColorAttr;
+        this.dndCrossColor = this.getAttribute('dnd_cross_color') || defaultDndCrossColorAttr;
+        this.promotionDialogTitle = this.getAttribute('defaultPromotionDialogTitleAttr') || 
+            defaultPromotionDialogTitleAttr;
+        this.whitePlayerHuman = (this.getAttribute('white_player_human') || defaultWhitePlayerIsHumanAttr) === 'true';
+        this.blackPlayerHuman = (this.getAttribute('black_player_human') || defaultBlackPlayerIsHumanAttr) === 'true';
+        this._logic = new Chess(this.startPosition);
 
-       this._render();
+        this._updateWaitingExternalMoveStatus();
+        this._render();
     }
 
     static get observedAttributes() {
@@ -78,8 +86,37 @@ class ChessBoardComponent extends HTMLElement {
             'white_cell_color', 'black_cell_color', 'start_position',
             'reversed',
             'origin_cell_color', 'target_cell_color', 'dnd_cross_color',
-            'promotion_dialog_title',
+            'promotion_dialog_title', 'white_player_human', 'black_player_human',
         ];
+    }
+
+    playMove({
+        startCellFile, startCellRank,
+        endCellFile, endCellRank,
+        promotion = 'q',
+    }) {
+        return new Promise((resolve, reject) => {
+            if ( ! this._waitingForExternalMove ) {
+                reject();
+                return;
+            }
+            const algebraicMoveString = this._convertMoveToObject({
+                startCellFile, startCellRank,
+                endCellFile, endCellRank,
+                promotion
+            });
+            const result = this._logic.move(algebraicMoveString);
+            this._updateWaitingExternalMoveStatus();
+            this._render();
+            if ( ![null, undefined].includes(result) ) {
+                resolve();
+                return;
+            }
+            else {
+                reject();
+                return;
+            }
+        });
     }
 
     _subscribeStandardEvents() {
@@ -217,11 +254,25 @@ class ChessBoardComponent extends HTMLElement {
         else if (name === 'promotion_dialog_title') {
             this.promotionDialogTitle = newValue || defaultPromotionDialogTitleAttr;
         }
+        else if (name === 'white_player_human') {
+            this.whitePlayerHuman = (newValue || defaultWhitePlayerIsHumanAttr) === 'true';
+        }
+        else if (name === 'black_player_human') {
+            this.blackPlayerHuman = (newValue || defaultBlackPlayerIsHumanAttr) === 'true';
+        }
     }
 
     toggleSide() {
         this.reversed = ! this.reversed;
         this._render();
+    }
+
+    _updateWaitingExternalMoveStatus() {
+        const isWhiteTurn = this._logic ? this._logic.turn() === 'w' : false;
+        const currentPlayerHuman = (isWhiteTurn && (this.whitePlayerHuman === true)) ||
+                (!isWhiteTurn && (this.blackPlayerHuman === true));
+
+        this._waitingForExternalMove = ! currentPlayerHuman;
     }
 
     _render() {
@@ -511,7 +562,9 @@ class ChessBoardComponent extends HTMLElement {
     }
 
     _handleMouseDown(event) {
-        event.preventDefault();     
+        event.preventDefault(); 
+        
+        if (this._waitingForExternalMove) return;
 
         const thisClientRect = this.shadowRoot.querySelector('#root').getBoundingClientRect();
         
@@ -545,6 +598,8 @@ class ChessBoardComponent extends HTMLElement {
     _handleMouseMove(event) {
         event.preventDefault();
 
+        if (this._waitingForExternalMove) return;
+
         if (this._dndStarted && [undefined, null].includes(this._pendingPromotionMove)) {
 
             const thisClientRect = this.shadowRoot.querySelector('#root').getBoundingClientRect();
@@ -566,6 +621,8 @@ class ChessBoardComponent extends HTMLElement {
 
     _handleMouseUp(event) {
         event.preventDefault();
+
+        if (this._waitingForExternalMove) return;
 
         const dndAlreadyCancelled = ! this._draggedPiece;
         if (dndAlreadyCancelled) return;
@@ -629,6 +686,7 @@ class ChessBoardComponent extends HTMLElement {
             endCellFile, endCellRank
         });
         this._logic.move(moveParams);
+        this._updateWaitingExternalMoveStatus();
         this._render();
 
         this._cancelDragAndDrop();
@@ -636,6 +694,9 @@ class ChessBoardComponent extends HTMLElement {
 
     _handleMouseLeave(event) {
         event.preventDefault();
+
+        if (this._waitingForExternalMove) return;
+
         if ([null, undefined].includes(this._pendingPromotionMove)) this._cancelDragAndDrop();
     }
 
@@ -871,6 +932,7 @@ class ChessBoardComponent extends HTMLElement {
         if (this._waitingForPromotionPiece) {
             const move = {...this._pendingPromotionMove, promotion: promotionType};
             this._logic.move(move);
+            this._updateWaitingExternalMoveStatus();
         }
     }
 
