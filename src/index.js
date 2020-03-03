@@ -112,7 +112,7 @@ class ChessBoardComponent extends HTMLElement {
        this._knightPromotionButtonBlack.addEventListener('click', this._handlePromotionSelection.bind(this, 'n'));
 
        this._promotionDialogOverlay = this.shadowRoot.querySelector('#promotion_background_overlay');
-       this._promotionDialogOverlay.addEventListener('click', this._cleanPendingPromotionState.bind(this));
+       this._promotionDialogOverlay.addEventListener('click', this._closePromotionDialog.bind(this));
 
        this._promotionDialogWhite.addEventListener('mousedown', this._cancelEvent.bind(this));
        this._promotionDialogBlack.addEventListener('mousedown', this._cancelEvent.bind(this));
@@ -155,7 +155,7 @@ class ChessBoardComponent extends HTMLElement {
 
         if (this._promotionDialogOverlay) {
             this._promotionDialogOverlay.removeEventListener('mousedown', this._cancelEvent.bind(this));
-            this._promotionDialogOverlay.removeEventListener('click', this._cleanPendingPromotionState.bind(this));
+            this._promotionDialogOverlay.removeEventListener('click', this._closePromotionDialog.bind(this));
         }
 
         if (this._promotionDialogWhite)
@@ -861,8 +861,6 @@ class ChessBoardComponent extends HTMLElement {
     _handlePromotionSelection(promotionType) {
         this._tryToCommitHumanPromotionMove(promotionType);
         this._closePromotionDialog();
-        this._cancelDragAndDrop();
-        this._render();
     }
 
     _tryToCommitHumanPromotionMove(promotionType) {
@@ -870,12 +868,6 @@ class ChessBoardComponent extends HTMLElement {
             const move = {...this._pendingPromotionMove, promotion: promotionType};
             this._logic.move(move);
         }
-    }
-
-    _cleanPendingPromotionState() {
-        this._pendingPromotionMove = undefined;
-        this._pendingPromotionMoveIsForWhite = undefined;
-        this._waitingForPromotionPiece = false;
     }
 
     _closePromotionDialog() {
@@ -887,7 +879,12 @@ class ChessBoardComponent extends HTMLElement {
         blackPromotionDialog.style.visibility = 'hidden';
         promotionDialogOverlay.style.visibility = 'hidden';
 
-        this._cleanPendingPromotionState();
+        this._pendingPromotionMove = undefined;
+        this._pendingPromotionMoveIsForWhite = undefined;
+        this._waitingForPromotionPiece = false;
+
+        this._cancelDragAndDrop();
+        this._render();
     }
 }
 
