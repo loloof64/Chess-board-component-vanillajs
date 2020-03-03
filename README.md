@@ -24,7 +24,7 @@ Usage
 ></loloof64-chessboard>
 ```
 
-### Properties
+### Attributes
 
 | Name                   | Purpose                                                   | Type    | Default                                                  |
 |------------------------|-----------------------------------------------------------|---------|----------------------------------------------------------|
@@ -43,6 +43,12 @@ Usage
 | black_player_human     | True if the black player is human, false for external (1) | boolean | true                                                     |
 
 (1) External player means that, instead of playing its move with interaction on the board, call the method `playMove` in order to commit its move. A simple use case would be to let an engine play.
+
+### Properties
+
+* isWhiteTurn : Boolean. true if it is White turn, false otherwise.
+* currentPosition: String. Returns the current position in Forsyth-Edwards Notation.
+
 
 ### Methods
 

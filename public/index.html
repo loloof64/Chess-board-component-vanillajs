@@ -27,6 +27,12 @@
                 endCellRank: endRank,
                 promotion: promotion
             };
+
+            //////////////////////////////////////////
+            console.log(board.currentPosition);
+            console.log(board.isWhiteTurn)
+            ////////////////////////////////////////////
+
             board.playMove(params).then(() => {}).catch(() => console.error('Could not commit move !'));
         }
     </script>

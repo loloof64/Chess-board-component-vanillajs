@@ -119,6 +119,14 @@ class ChessBoardComponent extends HTMLElement {
         });
     }
 
+    get isWhiteTurn() {
+        return this._logic.turn() === 'w';
+    }
+
+    get currentPosition() {
+        return this._logic.fen();
+    }
+
     _subscribeStandardEvents() {
        this._rootElement = this.shadowRoot.querySelector('#root');
        this._rootElement.addEventListener('mousedown', this._handleMouseDown.bind(this));
