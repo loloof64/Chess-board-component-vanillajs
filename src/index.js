@@ -1129,8 +1129,7 @@ class ChessBoardComponent extends HTMLElement {
             const move = {...this._pendingPromotionMove, promotion: promotionType};
             this._logic.move(move);
             this._lastMoveHighlight = {
-                startCellFile, startCellRank,
-                endCellFile, endCellRank
+                ...move
             };
             this._updateWaitingExternalMoveStatus();
         }

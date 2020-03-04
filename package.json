@@ -1,5 +1,5 @@
 {
-  "name": "chess-board-component-vanillajs",
+  "name": "loloof64-chess-board-component",
   "version": "1.0.0",
   "description": "A chess board Web Component",
   "directories": {
@@ -19,7 +19,6 @@
     "board",
     "web-component"
   ],
-  "private": true,
   "author": "Laurent Bernabe",
   "license": "MIT",
   "homepage": "https://github.com/loloof64/Chess-board-component-vanillajs#readme",
