@@ -21,6 +21,7 @@ Usage
     promotion_dialog_title="Promotion piece"
     white_player_human="true"
     black_player_human="false"
+    move_highlight_color="red"
 ></loloof64-chessboard>
 ```
 
@@ -41,6 +42,7 @@ Usage
 | promotion_dialog_title | Title of the promotion selection dialog                   | string  | Select the promotion piece                               |
 | white_player_human     | True if the white player is human, false for external (1) | boolean | true                                                     |
 | black_player_human     | True if the black player is human, false for external (1) | boolean | true                                                     |
+| move_highlight_color   | Color of the last move highlight arrow                    | string  | CadetBlue                                                |
 
 (1) External player means that, instead of playing its move with interaction on the board, call the method `playMove` in order to commit its move. A simple use case would be to let an engine play.
 
@@ -62,9 +64,11 @@ Usage
 ## Developers
 
 You can build with the command (in the terminal) `$ npm run build` from the root of the project. Result will be in the `dist` folder.
+
 But don't forget first to install all dependencies, with NodeJS : `npm install`.
 
 ## Credits
 
 Original pieces vectors definitions from CBurnett and found on [Wikimedia commons](https://commons.wikimedia.org/wiki/Category:SVG_chess_pieces).
+
 Using [ChessJS library](https://github.com/jhlywa/chess.js), which is bundled in the produced script.

@@ -17,6 +17,7 @@ const defaultDndCrossColorAttr = 'DimGrey';
 const defaultPromotionDialogTitleAttr = 'Select the promotion piece';
 const defaultWhitePlayerIsHumanAttr = 'true';
 const defaultBlackPlayerIsHumanAttr = 'true';
+const defaultLastMoveHighlightColorAttr = 'CadetBlue';
 
 class ChessBoardComponent extends HTMLElement {
     constructor(){
@@ -34,6 +35,7 @@ class ChessBoardComponent extends HTMLElement {
         this.promotionDialogTitle;
         this.whitePlayerHuman;
         this.blackPlayerHuman;
+        this.moveHighlightColor;
         
         this._cellsSize;
         this._logic;
@@ -56,6 +58,7 @@ class ChessBoardComponent extends HTMLElement {
         this._promotionDialogOverlay;
         this._promotionDialogWhite;
         this._promotionDialogBlack;
+        this._lastMoveHighlight;
     }
 
     connectedCallback() {
@@ -74,6 +77,7 @@ class ChessBoardComponent extends HTMLElement {
             defaultPromotionDialogTitleAttr;
         this.whitePlayerHuman = (this.getAttribute('white_player_human') || defaultWhitePlayerIsHumanAttr) === 'true';
         this.blackPlayerHuman = (this.getAttribute('black_player_human') || defaultBlackPlayerIsHumanAttr) === 'true';
+        this.moveHighlightColor = this.getAttribute('move_highlight_color') || defaultLastMoveHighlightColorAttr;
         this._logic = new Chess(this.startPosition);
 
         this._updateWaitingExternalMoveStatus();
@@ -87,6 +91,7 @@ class ChessBoardComponent extends HTMLElement {
             'reversed',
             'origin_cell_color', 'target_cell_color', 'dnd_cross_color',
             'promotion_dialog_title', 'white_player_human', 'black_player_human',
+            'move_highlight_color',
         ];
     }
 
@@ -107,12 +112,17 @@ class ChessBoardComponent extends HTMLElement {
             });
             const result = this._logic.move(algebraicMoveString);
             this._updateWaitingExternalMoveStatus();
-            this._render();
             if ( ![null, undefined].includes(result) ) {
+                this._lastMoveHighlight = {
+                    startCellFile, startCellRank,
+                    endCellFile, endCellRank
+                };
+                this._render();
                 resolve();
                 return;
             }
             else {
+                this._render();
                 reject();
                 return;
             }
@@ -268,6 +278,9 @@ class ChessBoardComponent extends HTMLElement {
         else if (name === 'black_player_human') {
             this.blackPlayerHuman = (newValue || defaultBlackPlayerIsHumanAttr) === 'true';
         }
+        else if (name === 'move_highlight_color') {
+            this.moveHighlightColor = newValue || defaultLastMoveHighlightColorAttr;
+        }
     }
 
     toggleSide() {
@@ -308,13 +321,25 @@ class ChessBoardComponent extends HTMLElement {
                     top: 0;
                 }
 
-                #dnd_highlight_layer {
+                #last_move_highlight_layer {
                     position: absolute;
                     width: ${this.size}px;
                     height: ${this.size}px;
                     left: 0;
                     top: 0;
                     z-index: 1;
+                    background-color: rgba(0,0,0,0.1);
+                    opacity: 0.9;
+                }
+
+
+                #dnd_highlight_layer {
+                    position: absolute;
+                    width: ${this.size}px;
+                    height: ${this.size}px;
+                    left: 0;
+                    top: 0;
+                    z-index: 2;
                     opacity: 0.8;
                 }
 
@@ -324,7 +349,7 @@ class ChessBoardComponent extends HTMLElement {
                     height: ${this.size}px;
                     left: 0;
                     top: 0;
-                    z-index: 2;
+                    z-index: 3;
                 }
 
                 #promotion_background_overlay {
@@ -345,7 +370,7 @@ class ChessBoardComponent extends HTMLElement {
                     height: ${this.size}px;
                     left: 0;
                     top: 0;
-                    z-index: 6;
+                    z-index: 5;
                 }
 
                 #promotion_selection_layer_white {
@@ -355,7 +380,7 @@ class ChessBoardComponent extends HTMLElement {
                     height: ${this.size}px;
                     left: 0;
                     top: 0;
-                    z-index: 6;
+                    z-index: 5;
                 }
 
                 .coordinate {
@@ -382,6 +407,9 @@ class ChessBoardComponent extends HTMLElement {
                     ${this._buildTopCells()}
                     ${this._buildMediumCells()}
                     ${this._buildBottomCells()}
+                </div>
+                <div id="last_move_highlight_layer">
+                    ${this._buildLastMoveArrow()}
                 </div>
                 <div id="dnd_highlight_layer"></div>
                 <div id="dnd_layer">
@@ -493,6 +521,162 @@ class ChessBoardComponent extends HTMLElement {
             ...coordinatesCells.join(''),
             playerTurn
         ].join('');
+    }
+
+    _buildLastMoveArrow() {
+        if ([null, undefined].includes(this._lastMoveHighlight)) return '';
+        
+        const halfThickness = this._cellsSize * 0.08;
+
+        const fromCol = this.reversed ? 7 - this._lastMoveHighlight.startCellFile : this._lastMoveHighlight.startCellFile;
+        const fromRow = this.reversed ? this._lastMoveHighlight.startCellRank : 7 - this._lastMoveHighlight.startCellRank;
+        const toCol = this.reversed ? 7 - this._lastMoveHighlight.endCellFile : this._lastMoveHighlight.endCellFile;
+        const toRow = this.reversed ? this._lastMoveHighlight.endCellRank : 7 - this._lastMoveHighlight.endCellRank; 
+
+        const ax = this._cellsSize * (fromCol + 1.0);
+        const ay = this._cellsSize * (fromRow + 1.0);
+        const bx = this._cellsSize * (toCol + 1.0);
+        const by = this._cellsSize * (toRow + 1.0);
+
+        const baseLine = this._buildLastMoveBaseLine(ax, ay, bx, by, halfThickness);
+        const arrow1 = this._buildLastMoveArrow1(ax, ay, bx, by, halfThickness);
+        const arrow2 = this._buildLastMoveArrow2(ax, ay, bx, by, halfThickness);
+        const point = this._buildLastMovePoint(ax, ay, bx, by, halfThickness);
+
+        return `
+            ${baseLine}
+            ${arrow1}
+            ${arrow2}
+            ${point}
+        `
+    }
+
+    _buildLastMoveBaseLine(ax, ay, bx, by, halfThickness) {
+        const realAx = ax - halfThickness;
+        const realAy = ay;
+        const realBx = bx - halfThickness;
+        const realBy = by;
+
+        const vectX = realBx - realAx;
+        const vectY = realBy - realAy;
+
+        const angleRad = Math.atan2(vectY, vectX) - Math.PI / 2.0;
+        const length = Math.sqrt(vectX * vectX + vectY * vectY);
+
+        const left = realAx;
+        const top = realAy;
+        const width = 2 * halfThickness;
+        const height = length;
+        const transformOrigin = `${halfThickness}px ${0}px`;
+        const transform = `rotate(${angleRad}rad)`;
+
+        let style = `"position: absolute; background-color: ${this.moveHighlightColor}; `;
+        style += `left: ${left}px; top: ${top}px; `;
+        style += `width: ${width}px; height: ${height}px; `;
+        style += `transform: ${transform}; -ms-transform: ${transform}; `;
+        style += `-moz-transform: ${transform}; -webkit-transform: ${transform}; `;
+        style += `transform-origin: ${transformOrigin}; -ms-transform-origin: ${transformOrigin}; `;
+        style += `-moz-transform-origin: ${transformOrigin}; -webkit-transform-origin: ${transformOrigin}; "`;
+        
+        return `
+            <div style=${style}></div>
+        `;
+    }
+
+    _buildLastMoveArrow1(ax, ay, bx, by, halfThickness) {
+        const realAx = ax - halfThickness;
+        const realAy = ay;
+        const realBx = bx - halfThickness;
+        const realBy = by;
+
+        const vectX = realBx - realAx;
+        const vectY = realBy - realAy;
+
+        const angleRad = Math.atan2(vectY, vectX) - Math.PI / 2.0 -  3 * Math.PI / 4.0;
+        const length = Math.sqrt(vectX * vectX + vectY * vectY) * 0.4;
+
+        const left = realBx;
+        const top = realBy;
+        const width = 2 * halfThickness;
+        const height = length;
+        const transform = `rotate(${angleRad}rad)`;
+        const transformOrigin = `${halfThickness}px ${0}px`;
+
+        let style = `"position: absolute; background-color: ${this.moveHighlightColor}; `;
+        style += `left: ${left}px; top: ${top}px; `;
+        style += `width: ${width}px; height: ${height}px; `;
+        style += `transform: ${transform}; -ms-transform: ${transform}; `;
+        style += `-moz-transform: ${transform}; -webkit-transform: ${transform}; `;
+        style += `transform-origin: ${transformOrigin}; -ms-transform-origin: ${transformOrigin}; `;
+        style += `-moz-transform-origin: ${transformOrigin}; -webkit-transform-origin: ${transformOrigin}; "`;
+        
+        return `
+            <div style=${style}></div>
+        `;
+    }
+
+    _buildLastMoveArrow2(ax, ay, bx, by, halfThickness) {
+        const realAx = ax - halfThickness;
+        const realAy = ay;
+        const realBx = bx - halfThickness;
+        const realBy = by;
+
+        const vectX = realBx - realAx;
+        const vectY = realBy - realAy;
+
+        const angleRad = Math.atan2(vectY, vectX) - Math.PI / 2.0 +  3 * Math.PI / 4.0;
+        const length = Math.sqrt(vectX * vectX + vectY * vectY) * 0.4;
+
+        const left = realBx;
+        const top = realBy;
+        const width = 2 * halfThickness;
+        const height = length;
+        const transform = `rotate(${angleRad}rad)`;
+        const transformOrigin = `${halfThickness}px ${0}px`;
+
+        let style = `"position: absolute; background-color: ${this.moveHighlightColor}; `;
+        style += `left: ${left}px; top: ${top}px; `;
+        style += `width: ${width}px; height: ${height}px; `;
+        style += `transform: ${transform}; -ms-transform: ${transform}; `;
+        style += `-moz-transform: ${transform}; -webkit-transform: ${transform}; `;
+        style += `transform-origin: ${transformOrigin}; -ms-transform-origin: ${transformOrigin}; `;
+        style += `-moz-transform-origin: ${transformOrigin}; -webkit-transform-origin: ${transformOrigin}; "`;
+        
+        return `
+            <div style=${style}></div>
+        `;
+    }
+
+    _buildLastMovePoint(ax, ay, bx, by, halfThickness) {
+        const realAx = ax - halfThickness;
+        const realAy = ay;
+        const realBx = bx - halfThickness;
+        const realBy = by - halfThickness;
+
+        const vectX = realBx - realAx;
+        const vectY = realBy - realAy;
+
+        const angleRad = Math.atan2(vectY, vectX) + Math.PI / 4.0;
+        const length = 2 * halfThickness;
+
+        const left = realBx;
+        const top = realBy;
+        const width = 2 * halfThickness;
+        const height = length;
+        const transform = `rotate(${angleRad}rad)`;
+        const transformOrigin = `center`;
+
+        let style = `"position: absolute; background-color: ${this.moveHighlightColor}; `;
+        style += `left: ${left}px; top: ${top}px; `;
+        style += `width: ${width}px; height: ${height}px; `;
+        style += `transform: ${transform}; -ms-transform: ${transform}; `;
+        style += `-moz-transform: ${transform}; -webkit-transform: ${transform}; `;
+        style += `transform-origin: ${transformOrigin}; -ms-transform-origin: ${transformOrigin}; `;
+        style += `-moz-transform-origin: ${transformOrigin}; -webkit-transform-origin: ${transformOrigin}; "`;
+        
+        return `
+            <div style=${style}></div>
+        `;
     }
 
     _buildDraggedPiece() {
@@ -694,6 +878,10 @@ class ChessBoardComponent extends HTMLElement {
             endCellFile, endCellRank
         });
         this._logic.move(moveParams);
+        this._lastMoveHighlight = {
+            startCellFile, startCellRank,
+            endCellFile, endCellRank
+        };
         this._updateWaitingExternalMoveStatus();
         this._render();
 
@@ -940,6 +1128,10 @@ class ChessBoardComponent extends HTMLElement {
         if (this._waitingForPromotionPiece) {
             const move = {...this._pendingPromotionMove, promotion: promotionType};
             this._logic.move(move);
+            this._lastMoveHighlight = {
+                startCellFile, startCellRank,
+                endCellFile, endCellRank
+            };
             this._updateWaitingExternalMoveStatus();
         }
     }

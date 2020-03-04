@@ -28,11 +28,6 @@
                 promotion: promotion
             };
 
-            //////////////////////////////////////////
-            console.log(board.currentPosition);
-            console.log(board.isWhiteTurn)
-            ////////////////////////////////////////////
-
             board.playMove(params).then(() => {}).catch(() => console.error('Could not commit move !'));
         }
     </script>
@@ -66,6 +61,7 @@
                 promotion_dialog_title="Promotion piece"
                 white_player_human="false"
                 black_player_human="true"
+                move_highlight_color="red"
             ></loloof64-chessboard>
         </div>
         </hr>
