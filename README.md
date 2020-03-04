@@ -62,7 +62,11 @@ Usage
 
 ### Events
 
-* checkmate : Informs that a checkmate have just happened on the board. The property `detail.whiteTurnBeforeMove` of the event tells if the side that checkmated were White or Black.
+* checkmate : Informs that a checkmate has just happened on the board. The property `detail.whiteTurnBeforeMove` of the event tells if the side that checkmated were White or Black.
+* stalemate : Informs that a stalemate has just happended on the board. No additional property.
+* perpetual_draw: Informs that a 3-fold repetitions draw has just happened on the board. No additional property.
+* missing_material_draw : Informs that a draw by missing material has just happened on the board. No additional property.
+* fifty_moves_draw: Informs that a draw by the 50 moves rule has just happened on the board. No additional property.
 
 ## Developers
 

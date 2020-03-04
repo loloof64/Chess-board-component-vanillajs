@@ -173,6 +173,30 @@ class ChessBoardComponent extends HTMLElement {
 
             this.dispatchEvent(event);
         }
+
+        else if (isStalemate) {
+            this._gameInProgress = false;
+            const event = this._createCustomEvent('stalemate');
+            this.dispatchEvent(event);
+        }
+
+        else if (isPerpetualDraw) {
+            this._gameInProgress = false;
+            const event = this._createCustomEvent('perpetual_draw');
+            this.dispatchEvent(event);
+        }
+
+        else if (isMissingMaterialDraw) {
+            this._gameInProgress = false;
+            const event = this._createCustomEvent('missing_material_draw');
+            this.dispatchEvent(event);
+        }
+
+        else if (isFiftyMovesRuleDraw) {
+            this._gameInProgress = false;
+            const event = this._createCustomEvent('fifty_moves_draw');
+            this.dispatchEvent(event);
+        }
     }
 
     _subscribeStandardEvents() {
