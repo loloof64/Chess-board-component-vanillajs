@@ -17,6 +17,14 @@
             margin-top: 30px;
         }
     </style>
+
+    <script>
+        
+        function newGame() {
+            const board = document.querySelector('loloof64-chessboard');
+            board.newGame('rnbqkbnr/pp1ppppp/8/2p5/4P3/8/PPPP1PPP/RNBQKBNR w KQkq c6 0 2');
+        }
+    </script>
 </head>
 <body>
     <div id="board_zone">
@@ -33,6 +41,10 @@
                 promotion_dialog_title="Promotion piece"
                 move_highlight_color="DeepSkyBlue"
             ></loloof64-chessboard>
+
+            <button onclick="newGame();">
+                New game
+            </button>
         </div>
     </div>
 </body>

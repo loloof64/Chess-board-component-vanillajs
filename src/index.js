@@ -9,7 +9,6 @@ const defaultBackgroundAttr = '#124589';
 const defaultCoordinatesColorAttr = 'DarkOrange';
 const defaultWhiteCellsColorAttr = 'GoldenRod';
 const defaultBlackCellsColorAttr = 'brown';
-const defaultStartPositionAttr = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
 const defaultReversedAttr = 'false';
 const defaultOriginCellColorAttr = 'crimson';
 const defaultTargetCellColorAttr = 'ForestGreen';
@@ -59,6 +58,7 @@ class ChessBoardComponent extends HTMLElement {
         this._promotionDialogWhite;
         this._promotionDialogBlack;
         this._lastMoveHighlight;
+        this._gameInProgress;
     }
 
     connectedCallback() {
@@ -68,7 +68,6 @@ class ChessBoardComponent extends HTMLElement {
         this.coordinatesColor = this.getAttribute('coordinates_color') || defaultCoordinatesColorAttr;
         this.whiteCellColor = this.getAttribute('white_cell_color') || defaultWhiteCellsColorAttr;
         this.blackCellColor = this.getAttribute('black_cell_color') || defaultBlackCellsColorAttr;
-        this.startPosition = this.getAttribute('start_position') || defaultStartPositionAttr;
         this.reversed = (this.getAttribute('reversed') || defaultReversedAttr) === 'true';
         this.originCellColor = this.getAttribute('origin_cell_color') || defaultOriginCellColorAttr;
         this.targetCellColor = this.getAttribute('target_cell_color') || defaultTargetCellColorAttr;
@@ -78,8 +77,10 @@ class ChessBoardComponent extends HTMLElement {
         this.whitePlayerHuman = (this.getAttribute('white_player_human') || defaultWhitePlayerIsHumanAttr) === 'true';
         this.blackPlayerHuman = (this.getAttribute('black_player_human') || defaultBlackPlayerIsHumanAttr) === 'true';
         this.moveHighlightColor = this.getAttribute('move_highlight_color') || defaultLastMoveHighlightColorAttr;
-        this._logic = new Chess(this.startPosition);
+        const emptyBoardFen = '8/8/8/8/8/8/8/8 w - - 0 1';
+        this._logic = new Chess(emptyBoardFen);
 
+        this._checkAndDispatchGameFinishedStatus();
         this._updateWaitingExternalMoveStatus();
         this._render();
     }
@@ -87,7 +88,7 @@ class ChessBoardComponent extends HTMLElement {
     static get observedAttributes() {
         return [
             'size', 'background', 'coordinates_color',
-            'white_cell_color', 'black_cell_color', 'start_position',
+            'white_cell_color', 'black_cell_color',
             'reversed',
             'origin_cell_color', 'target_cell_color', 'dnd_cross_color',
             'promotion_dialog_title', 'white_player_human', 'black_player_human',
@@ -111,7 +112,10 @@ class ChessBoardComponent extends HTMLElement {
                 promotion
             });
             const result = this._logic.move(algebraicMoveString);
+
+            this._checkAndDispatchGameFinishedStatus();
             this._updateWaitingExternalMoveStatus();
+
             if ( ![null, undefined].includes(result) ) {
                 this._lastMoveHighlight = {
                     startCellFile, startCellRank,
@@ -135,6 +139,28 @@ class ChessBoardComponent extends HTMLElement {
 
     get currentPosition() {
         return this._logic.fen();
+    }
+
+    newGame(startPositionFen) {
+        const position = startPositionFen || 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
+        this._logic = new Chess(position);
+        this._lastMoveHighlight = undefined;
+        
+        this._dndStarted = undefined
+        this._draggedPiece = undefined
+        this._draggedPieceLocation = undefined
+        this._draggedPieceOriginCell = undefined
+        this._waitingForPromotionPiece = undefined
+        this._pendingPromotionMove = undefined
+        this._pendingPromotionMoveIsForWhite = undefined
+
+        this._gameInProgress = true;
+
+        this._render();
+    }
+
+    _checkAndDispatchGameFinishedStatus() {
+        ///// TODO !!!!!!
     }
 
     _subscribeStandardEvents() {
@@ -246,11 +272,6 @@ class ChessBoardComponent extends HTMLElement {
         }
         else if (name === 'black_cell_color') {
             this.blackCellColor = newValue || defaultBlackCellsColorAttr;
-            this._render();
-        }
-        else if (name === 'start_position') {
-            this.startPosition = newValue || defaultStartPositionAttr;
-            this._logic = new Chess(this.startPosition);
             this._render();
         }
         else if (name === 'reversed') {
@@ -883,7 +904,10 @@ class ChessBoardComponent extends HTMLElement {
             startCellFile, startCellRank,
             endCellFile, endCellRank
         };
+
+        this._checkAndDispatchGameFinishedStatus();
         this._updateWaitingExternalMoveStatus();
+
         this._render();
 
         this._cancelDragAndDrop();
@@ -1138,6 +1162,7 @@ class ChessBoardComponent extends HTMLElement {
             this._lastMoveHighlight = {
                 startCellFile, startCellRank, endCellFile, endCellRank,
             };
+            this._checkAndDispatchGameFinishedStatus();
             this._updateWaitingExternalMoveStatus();
         }
     }
@@ -1157,6 +1182,15 @@ class ChessBoardComponent extends HTMLElement {
 
         this._cancelDragAndDrop();
         this._render();
+    }
+    
+    _createCustomEvent(evtName, evtDetails) {
+        return new CustomEvent(evtName, {
+            detail: evtDetails,
+            bubbles: true,
+            cancelable: false,
+            composed: false,
+        });
     }
 }
 
