@@ -6,32 +6,6 @@
     <script src="../dist/ChessBoardComponent.min.js"></script>
     <title>Chess board web component test</title>
 
-    <script>
-        function toggleBoard() {
-            var board = document.querySelector('loloof64-chessboard');
-            board.toggleSide();
-        }
-
-        function commitMove() {
-            const startFile = parseInt(document.querySelector('#startFile').value);
-            const startRank = parseInt(document.querySelector('#startRank').value);
-            const endFile = parseInt(document.querySelector('#endFile').value);
-            const endRank = parseInt(document.querySelector('#endRank').value);
-            const promotion = document.querySelector('#promotion').value;
-
-            var board = document.querySelector('loloof64-chessboard');
-            var params = {
-                startCellFile: startFile,
-                startCellRank: startRank,
-                endCellFile: endFile,
-                endCellRank: endRank,
-                promotion: promotion
-            };
-
-            board.playMove(params).then(() => {}).catch(() => console.error('Could not commit move !'));
-        }
-    </script>
-
     <style>
         #board_zone {
             margin-left: 10px;
@@ -57,7 +31,7 @@
                 target_cell_color="green"
                 dnd_cross_color="purple"
                 promotion_dialog_title="Promotion piece"
-                move_highlight_color="true"
+                move_highlight_color="DeepSkyBlue"
             ></loloof64-chessboard>
         </div>
     </div>

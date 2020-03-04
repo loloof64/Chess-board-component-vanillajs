@@ -524,6 +524,7 @@ class ChessBoardComponent extends HTMLElement {
     }
 
     _buildLastMoveArrow() {
+
         if ([null, undefined].includes(this._lastMoveHighlight)) return '';
         
         const halfThickness = this._cellsSize * 0.08;
@@ -1127,9 +1128,15 @@ class ChessBoardComponent extends HTMLElement {
     _tryToCommitHumanPromotionMove(promotionType) {
         if (this._waitingForPromotionPiece) {
             const move = {...this._pendingPromotionMove, promotion: promotionType};
+
+            const startCellFile = this._pendingPromotionMove.from.charCodeAt(0) - 'a'.charCodeAt(0);
+            const startCellRank = this._pendingPromotionMove.from.charCodeAt(1) - '1'.charCodeAt(0);
+            const endCellFile = this._pendingPromotionMove.to.charCodeAt(0) - 'a'.charCodeAt(0);
+            const endCellRank = this._pendingPromotionMove.to.charCodeAt(1) - '1'.charCodeAt(0);
+            
             this._logic.move(move);
             this._lastMoveHighlight = {
-                ...move
+                startCellFile, startCellRank, endCellFile, endCellRank,
             };
             this._updateWaitingExternalMoveStatus();
         }
