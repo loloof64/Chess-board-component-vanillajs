@@ -80,8 +80,6 @@ class ChessBoardComponent extends HTMLElement {
         const emptyBoardFen = '8/8/8/8/8/8/8/8 w - - 0 1';
         this._logic = new Chess(emptyBoardFen);
 
-        this._checkAndDispatchGameFinishedStatus();
-        this._updateWaitingExternalMoveStatus();
         this._render();
     }
 
@@ -160,7 +158,21 @@ class ChessBoardComponent extends HTMLElement {
     }
 
     _checkAndDispatchGameFinishedStatus() {
-        ///// TODO !!!!!!
+        const isCheckmate = this._logic.in_checkmate();
+        const isStalemate = this._logic.in_stalemate();
+        const isPerpetualDraw = this._logic.in_threefold_repetition();
+
+        const isMissingMaterialDraw = this._logic.in_draw() && this._logic.insufficient_material();
+        const isFiftyMovesRuleDraw = this._logic.in_draw() && ! this._logic.insufficient_material();
+
+        if (isCheckmate) {
+            this._gameInProgress = false;
+            const event = this._createCustomEvent('checkmate', {
+                whiteTurnBeforeMove: this._logic.turn() !== 'w',
+            });
+
+            this.dispatchEvent(event);
+        }
     }
 
     _subscribeStandardEvents() {
@@ -778,6 +790,7 @@ class ChessBoardComponent extends HTMLElement {
     _handleMouseDown(event) {
         event.preventDefault(); 
         
+        if ( ! this._gameInProgress ) return;
         if (this._waitingForExternalMove) return;
 
         const thisClientRect = this.shadowRoot.querySelector('#root').getBoundingClientRect();
@@ -812,6 +825,7 @@ class ChessBoardComponent extends HTMLElement {
     _handleMouseMove(event) {
         event.preventDefault();
 
+        if ( ! this._gameInProgress ) return;
         if (this._waitingForExternalMove) return;
 
         if (this._dndStarted && [undefined, null].includes(this._pendingPromotionMove)) {
@@ -836,6 +850,7 @@ class ChessBoardComponent extends HTMLElement {
     _handleMouseUp(event) {
         event.preventDefault();
 
+        if ( ! this._gameInProgress ) return;
         if (this._waitingForExternalMove) return;
 
         const dndAlreadyCancelled = ! this._draggedPiece;
@@ -916,6 +931,7 @@ class ChessBoardComponent extends HTMLElement {
     _handleMouseLeave(event) {
         event.preventDefault();
 
+        if ( ! this._gameInProgress ) return;
         if (this._waitingForExternalMove) return;
 
         if ([null, undefined].includes(this._pendingPromotionMove)) this._cancelDragAndDrop();
@@ -1184,12 +1200,9 @@ class ChessBoardComponent extends HTMLElement {
         this._render();
     }
     
-    _createCustomEvent(evtName, evtDetails) {
+    _createCustomEvent(evtName, evtDetail) {
         return new CustomEvent(evtName, {
-            detail: evtDetails,
-            bubbles: true,
-            cancelable: false,
-            composed: false,
+            detail: evtDetail,
         });
     }
 }

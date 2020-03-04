@@ -60,6 +60,10 @@ Usage
   }): Tries to play the given move on the component, only if the current player is defined as an external user. Returns a Promise. All coordinates, integers, start from 0 (file 0 = 'A', rank 0 = '1'). Valid promotion values are 'q', 'r', 'b' and 'n'.
 * newGame(startPositionFen): Starts a new game with the given position in Forsyth-Edwards Notation. If the startPositionFen string is not given, will use the default chess start position.
 
+### Events
+
+* checkmate : Informs that a checkmate have just happened on the board. The property `detail.whiteTurnBeforeMove` of the event tells if the side that checkmated were White or Black.
+
 ## Developers
 
 You can build with the command (in the terminal) `$ npm run build` from the root of the project. Result will be in the `dist` folder.
